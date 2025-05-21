@@ -21,16 +21,17 @@ void set_screen(app_screen_t screen)
 
 bool running;
 
-void main_menu_callback(unsigned short item);
+void main_menu_callback(short item);
 
 void begin()
 {
+    static const char *items[] = {"Play", "Quit", "A", "B", "C", "D", "E"};
     running = true;
 
-    open_menu("Chess", (char *[]){"Play", "Quit"}, 2, main_menu_callback);
+    open_menu("Chess", items, sizeof(items) / sizeof(char *), main_menu_callback);
 }
 
-void main_menu_callback(unsigned short item)
+void main_menu_callback(short item)
 {
     switch (item)
     {

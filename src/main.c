@@ -4,8 +4,6 @@
 
 #include "main.h"
 
-#define TICK_TIME 50  // ms
-
 // bool partial_redraw;
 bool redraw;
 unsigned int ticks = 0;
@@ -18,7 +16,9 @@ int main(void)
 
     begin();
     gfx_Begin();
+
     gfx_SetDrawBuffer();
+    gfx_SetTextScale(TEXT_SCALE, TEXT_SCALE);
 
     while (step())
     {

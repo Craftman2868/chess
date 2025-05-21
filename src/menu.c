@@ -7,21 +7,30 @@
 #include "main.h"
 #include "app.h"
 
+#define DEFAULT_TEXT_HEIGHT 8  // px  (can't be changed)
 
-#define DISPLAY_ITEM_COUNT 4 // Number of menu item displayed
-#define ITEM_HEIGHT 12       // px
+#define TEXT_HEIGHT (DEFAULT_TEXT_HEIGHT * TEXT_SCALE)
 
-struct
+#define MENU_MARGIN_TOP 30  // px
+#define MENU_MARGIN_LEFT 42  // px
+#define MENU_MARGIN_TITLE 24  // px
+#define MENU_MARGIN_TITLE_LEFT 64  // px
+#define TEXT_MARGIN 5  // px
+#define ITEM_HEIGHT (TEXT_HEIGHT + TEXT_MARGIN * 2)
+#define DISPLAY_ITEM_COUNT 4  // Number of menu item displayed
+#define MENU_ITEMS_MARGIN_TOP (MENU_MARGIN_TOP + TEXT_HEIGHT + MENU_MARGIN_TITLE)
+
+static struct
 {
-    char *title;
-    char **items;
-    unsigned short item_count;
-    unsigned short current_item;
-    unsigned short offset;
-    void (*callback)(unsigned short);
+    const char *title;
+    const char **items;
+    short item_count;
+    short current_item;
+    short offset;
+    void (*callback)(short);
 } menu;
 
-void open_menu(char *title, char *items[], unsigned short item_count, void (*callback)(unsigned short))
+void open_menu(const char *title, const char *items[], short item_count, void (*callback)(short))
 {
     menu.title = title;
     menu.items = items;
@@ -34,11 +43,18 @@ void open_menu(char *title, char *items[], unsigned short item_count, void (*cal
     redraw = true;
 }
 
+// Because the native '%' behave weirdly with negative numbers
+inline short mod(short a, short b)
+{
+    short r = a % b;
+    return r < 0 ? r + b : r;
+}
+
 void step_menu()
 {
     if (kb_Data[7] & kb_Up)
     {
-        menu.current_item = (menu.current_item - 1) % menu.item_count;
+        menu.current_item = mod(menu.current_item - 1, menu.item_count);
         if (menu.current_item < menu.offset)
             menu.offset--;
         else if (menu.current_item >= menu.offset + DISPLAY_ITEM_COUNT)
@@ -48,7 +64,7 @@ void step_menu()
     }
     else if (kb_Data[7] & kb_Down)
     {
-        menu.current_item = (menu.current_item + 1) % menu.item_count;
+        menu.current_item = mod(menu.current_item + 1, menu.item_count);
         if (menu.current_item >= menu.offset + DISPLAY_ITEM_COUNT)
             menu.offset++;
         else if (menu.current_item < menu.offset)
@@ -67,17 +83,19 @@ void step_menu()
 
 void draw_menu()
 {
-    unsigned short item;
+    short item;
 
     gfx_FillScreen(0xFF);
 
     gfx_SetColor(0xF7);
-    gfx_SetTextBGColor(0xF7);
+    gfx_SetTextBGColor(0xFF);
     gfx_SetTextFGColor(0x20);
 
-    gfx_PrintStringXY(menu.title, 48, 10);
+    gfx_PrintStringXY(menu.title, MENU_MARGIN_TITLE_LEFT, MENU_MARGIN_TOP);
 
-    for (unsigned short i = 0; i < DISPLAY_ITEM_COUNT; i++)
+    gfx_SetTextBGColor(0xF7);
+
+    for (short i = 0; i < DISPLAY_ITEM_COUNT; i++)
     {
         item = menu.offset + i;
 
@@ -97,7 +115,8 @@ void draw_menu()
             gfx_SetTextFGColor(0x20);
         }
 
-        gfx_FillRectangle(22, 22 + i * ITEM_HEIGHT, 100, ITEM_HEIGHT);
-        // gfx_PrintStringXY(menu.items[item], 24, 22 + i * ITEM_HEIGHT + 2);
+        gfx_FillRectangle(MENU_MARGIN_LEFT, MENU_ITEMS_MARGIN_TOP + i * ITEM_HEIGHT, 100, ITEM_HEIGHT);
+
+        gfx_PrintStringXY(menu.items[item], MENU_MARGIN_LEFT + TEXT_MARGIN, MENU_ITEMS_MARGIN_TOP + TEXT_MARGIN + i * ITEM_HEIGHT);
     }
 }

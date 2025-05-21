@@ -3,6 +3,9 @@
 
 #include <stdbool.h>
 
+#define TICK_TIME 50  // ms
+#define TEXT_SCALE 2  // times
+
 // extern bool partial_redraw;
 extern bool redraw;
 extern unsigned int ticks;

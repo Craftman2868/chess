@@ -3,6 +3,8 @@
 
 #include <stdbool.h>
 
+#define DEBUGGING false
+
 #define TICK_TIME 50  // ms
 #define TEXT_SCALE 2  // times
 

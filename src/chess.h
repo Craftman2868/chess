@@ -21,6 +21,4 @@ struct {
 } typedef piece_t;
 
 
-extern piece_t board[8][8];
-
 #endif /* CHESS_H */

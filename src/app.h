@@ -1,11 +1,17 @@
 #ifndef APP_H
 #define APP_H
 
+#include <stdbool.h>
+
 enum {
+#if DEBUGGING
     DEBUG,
+#endif  // DEBUGGING
     MENU,
     GAME,
 } typedef app_screen_t;
+
+extern bool running;
 
 void set_screen(app_screen_t screen);
 

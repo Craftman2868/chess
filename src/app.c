@@ -26,12 +26,17 @@ void main_menu_callback(short item);
 
 void begin()
 {
-    // static const char *items[] = {"Play", "Quit", "A", "B", "C", "D", "E"};
+    static const char *items[] = {"Play", "Quit", "A", "B", "C", "D", "E"};
+
     running = true;
 
-    // open_menu("Chess", items, sizeof(items) / sizeof(char *), main_menu_callback);
-
+#if DEBUGGING
     set_screen(DEBUG);
+
+    return;
+#endif  // DEBUGGING
+
+    open_menu("Chess", items, sizeof(items) / sizeof(char *), main_menu_callback);
 }
 
 void main_menu_callback(short item)
@@ -64,16 +69,18 @@ bool step()
 
     switch (current_screen)
     {
+#if DEBUGGING
     case DEBUG:
         step_debug();
         break;
-
+#endif  // DEBUGGING
     case MENU:
         step_menu();
         break;
 
     case GAME:
-        // Not implemented yet
+        step_game();
+        break;
 
     default:
         running = false;  // Prevent an endless loop
@@ -87,16 +94,18 @@ void draw()
 {
     switch (current_screen)
     {
+#if DEBUGGING
     case DEBUG:
         draw_debug();
         break;
-
+#endif  // DEBUGGING
     case MENU:
         draw_menu();
         break;
 
     case GAME:
-        // Not implemented yet
+        draw_game();
+        break;
 
     default:
         break;

@@ -6,6 +6,7 @@
 #include <sys/rtc.h>
 #include "main.h"
 #include "app.h"
+#include "input.h"
 
 #define DEFAULT_TEXT_HEIGHT 8  // px  (can't be changed)
 
@@ -50,34 +51,75 @@ inline short mod(short a, short b)
     return r < 0 ? r + b : r;
 }
 
+void menu_up() {
+    menu.current_item = mod(menu.current_item - 1, menu.item_count);
+    if (menu.current_item < menu.offset)
+        menu.offset--;
+    else if (menu.current_item >= menu.offset + DISPLAY_ITEM_COUNT)
+        menu.offset = menu.item_count - DISPLAY_ITEM_COUNT;
+
+    redraw = true;
+}
+
+void menu_down() {
+    menu.current_item = mod(menu.current_item + 1, menu.item_count);
+    if (menu.current_item >= menu.offset + DISPLAY_ITEM_COUNT)
+        menu.offset++;
+    else if (menu.current_item < menu.offset)
+        menu.offset = 0;
+
+    redraw = true;
+}
+
+void menu_select() {
+    if (menu.callback != NULL)
+    {
+        menu.callback(menu.current_item);
+    }
+}
+
+void handle_event(input_event_t event) {
+    if (event.type != EV_KEY_DOWN && event.type != EV_KEY_REPEAT)
+    {
+        return;
+    }
+
+    switch (event.key.group)
+    {
+    case 6:
+        if (event.key.key == kb_Enter)
+        {
+            menu_select();
+        }
+        break;
+    case 7:
+        switch (event.key.key)
+        {
+        case kb_Up:
+            menu_up();
+            break;
+        case kb_Down:
+            menu_down();
+            break;
+        case kb_Right:
+            menu_select();
+            break;
+        default:
+            break;
+        }
+        break;
+    default:
+        break;
+    }
+}
+
 void step_menu()
 {
-    if (kb_Data[7] & kb_Up)
-    {
-        menu.current_item = mod(menu.current_item - 1, menu.item_count);
-        if (menu.current_item < menu.offset)
-            menu.offset--;
-        else if (menu.current_item >= menu.offset + DISPLAY_ITEM_COUNT)
-            menu.offset = menu.item_count - DISPLAY_ITEM_COUNT;
+    input_event_t event;
 
-        redraw = true;
-    }
-    else if (kb_Data[7] & kb_Down)
+    while (get_event(&event))
     {
-        menu.current_item = mod(menu.current_item + 1, menu.item_count);
-        if (menu.current_item >= menu.offset + DISPLAY_ITEM_COUNT)
-            menu.offset++;
-        else if (menu.current_item < menu.offset)
-            menu.offset = 0;
-
-        redraw = true;
-    }
-    else if (kb_Data[7] & kb_Right || kb_Data[6] & kb_Enter)
-    {
-        if (menu.callback != NULL)
-        {
-            menu.callback(menu.current_item);
-        }
+        handle_event(event);
     }
 }
 

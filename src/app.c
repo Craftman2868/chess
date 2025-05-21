@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <keypadc.h>
 #include "screens.h"
+#include "input.h"
 #include "menu.h"
 
 // App
@@ -25,10 +26,12 @@ void main_menu_callback(short item);
 
 void begin()
 {
-    static const char *items[] = {"Play", "Quit", "A", "B", "C", "D", "E"};
+    // static const char *items[] = {"Play", "Quit", "A", "B", "C", "D", "E"};
     running = true;
 
-    open_menu("Chess", items, sizeof(items) / sizeof(char *), main_menu_callback);
+    // open_menu("Chess", items, sizeof(items) / sizeof(char *), main_menu_callback);
+
+    set_screen(DEBUG);
 }
 
 void main_menu_callback(short item)
@@ -54,13 +57,17 @@ void end()
 
 bool step()
 {
-    kb_Scan();
+    update_inputs();
 
     if (kb_On)
         return false;  // Debugging interrupt signal (to be removed)
 
     switch (current_screen)
     {
+    case DEBUG:
+        step_debug();
+        break;
+
     case MENU:
         step_menu();
         break;
@@ -80,6 +87,10 @@ void draw()
 {
     switch (current_screen)
     {
+    case DEBUG:
+        draw_debug();
+        break;
+
     case MENU:
         draw_menu();
         break;

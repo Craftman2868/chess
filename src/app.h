@@ -2,6 +2,7 @@
 #define APP_H
 
 enum {
+    DEBUG,
     MENU,
     GAME,
 } typedef app_screen_t;

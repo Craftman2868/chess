@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <sys/timers.h>
 #include <graphx.h>
+#include <stdio.h>
 
 #include "main.h"
 

@@ -1,6 +1,8 @@
 #ifndef CHESS_H
 #define CHESS_H
 
+#include <stdint.h>
+
 enum {
     NONE,
     PAWN,
@@ -21,5 +23,8 @@ struct {
     color_t color;
 } typedef piece_t;
 
+struct {
+    uint8_t x, y;
+} typedef pos_t;
 
 #endif /* CHESS_H */

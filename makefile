@@ -5,7 +5,7 @@
 NAME = CHESS
 ICON = icon.png
 DESCRIPTION = "Chess Game"
-COMPRESSED = NO  # YES
+COMPRESSED = YES
 
 CFLAGS = -Wall -Wextra -Oz
 CXXFLAGS = -Wall -Wextra -Oz

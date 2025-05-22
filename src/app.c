@@ -11,11 +11,35 @@
 
 app_screen_t current_screen;
 
+
+void screen_begin() {
+    switch (current_screen)
+    {
+#if DEBUGGING
+    case DEBUG:
+        // No begin function
+        break;
+#endif  // DEBUGGING
+    case MENU:
+        // No begin function (yet)
+        break;
+
+    case GAME:
+        begin_game();
+        break;
+
+    default:
+        break;
+    }
+}
+
 void set_screen(app_screen_t screen)
 {
     current_screen = screen;
 
     redraw = true;
+    
+    screen_begin();
 }
 
 // Main

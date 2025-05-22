@@ -2,6 +2,7 @@
 #define CHESS_H
 
 enum {
+    NONE,
     PAWN,
     KNIGHT,
     BISHOP,

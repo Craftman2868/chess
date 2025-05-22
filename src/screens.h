@@ -8,6 +8,7 @@ void step_menu();
 void draw_menu();
 
 // game.c
+void begin_game();
 void step_game();
 void draw_game();
 

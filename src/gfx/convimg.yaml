@@ -1,5 +1,10 @@
 palettes:
   - name: global_palette
+    fixed-entries:
+      - color: {index: 1, r: 255, g: 255, b: 255}  # White
+      - color: {index: 2, r: 58, g: 57, b: 58}  # Grey
+      - color: {index: 3, r: 173, g: 49, b: 49}  # Red
+      - color: {index: 4, r: 48, g: 48, b: 216}  # Blue
     images: automatic
 
 converts:

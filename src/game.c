@@ -17,6 +17,9 @@
 
 piece_t board[8*8];
 color_t turn;
+struct {
+    uint8_t x, y;
+} selected;
 
 #define BOARD(x, y) board[y*8+x]
 
@@ -48,6 +51,9 @@ void init_board() {
 void init_game() {
     init_board();
 
+    selected.x = 0;
+    selected.y = 7;
+
     turn = WHITE;
 }
 
@@ -62,9 +68,9 @@ void draw_piece(piece_t piece, uint8_t x, uint8_t y) {
 }
 
 void draw_board() {
-    gfx_FillScreen(0x03);  // White
+    gfx_FillScreen(1);  // White
 
-    gfx_SetColor(0x01);  // Grey
+    gfx_SetColor(2);  // Grey
 
     for (uint8_t y = 0; y < 8; y++) {
         for (uint8_t x = 0; x < 8; x++) {
@@ -74,8 +80,20 @@ void draw_board() {
             if (BOARD(x, y).type != NONE) {
                 draw_piece(BOARD(x, y), x, y);
             }
+            if (selected.x == x && selected.y == y) {
+                gfx_SetColor(4);  // Blue
+                gfx_Rectangle(OF_X + x * TILE_W, OF_Y + y * TILE_H, TILE_W, TILE_H);
+                gfx_Rectangle(OF_X + x * TILE_W + 1, OF_Y + y * TILE_H + 1, TILE_W - 2, TILE_H - 2);
+                gfx_SetColor(2);  // Grey
+            }
         }
     }
+}
+
+// Called when enter is pressed
+void select()
+{
+
 }
 
 
@@ -93,12 +111,54 @@ void step_game() {
 
     while (get_event(&event))
     {
-        if (event.type == EV_KEY_DOWN)
+        if (event.type != EV_KEY_DOWN && event.type != EV_KEY_REPEAT)
+            continue;
+
+        switch (event.key.group)
         {
-            if (event.key.group == 6 && event.key.key == kb_Clear)
-            {
+        case 6:
+            if (event.key.key == kb_Clear)
                 running = false;
+            if (event.key.key == kb_Enter)
+                select();
+            break;
+        case 7:
+            switch (event.key.key)
+            {
+            case kb_Up:
+                if (selected.y > 0)
+                {
+                    selected.y--;
+                    redraw = true;
+                }
+                break;
+            case kb_Down:
+                if (selected.y < 7)
+                {
+                    selected.y++;
+                    redraw = true;
+                }
+                break;
+            case kb_Left:
+                if (selected.x > 0)
+                {
+                    selected.x--;
+                    redraw = true;
+                }
+                break;
+            case kb_Right:
+                if (selected.x < 7)
+                {
+                    selected.x++;
+                    redraw = true;
+                }
+                break;
+            default:
+                break;
             }
+            break;
+        default:
+            break;
         }
     }
 }

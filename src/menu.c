@@ -8,6 +8,8 @@
 #include "app.h"
 #include "input.h"
 
+#include <debug.h>
+
 #define DEFAULT_TEXT_HEIGHT 8  // px  (can't be changed)
 
 #define TEXT_HEIGHT (DEFAULT_TEXT_HEIGHT * TEXT_SCALE)

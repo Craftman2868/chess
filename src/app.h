@@ -2,6 +2,7 @@
 #define APP_H
 
 #include <stdbool.h>
+#include "main.h"
 
 enum {
 #if DEBUGGING

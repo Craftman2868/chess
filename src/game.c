@@ -307,7 +307,7 @@ void draw_board()
     {
         for (uint8_t x = 0; x < 8; x++)
         {
-            if ((x + y) % 2 == 0)
+            if ((x + y) % 2)
             {
                 gfx_FillRectangle(OF_X + x * TILE_W, OF_Y + y * TILE_H, TILE_W, TILE_H);
             }
@@ -317,7 +317,7 @@ void draw_board()
             }
             if (potential_move[POS_XY(x, y)])
             {
-                draw_potential(3, 1 - (x + y) % 2, x, y);
+                draw_potential(3, (x + y) % 2, x, y);
             }
             if (selected.x == x && selected.y == y)
             {

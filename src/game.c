@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <keypadc.h>
 #include <graphx.h>
+#include <string.h>  // memcpy
 #include "app.h"
 #include "input.h"
 
@@ -18,6 +19,7 @@
 
 piece_t board[8 * 8];
 color_t turn;
+bool in_check;
 pos_t cursor;
 pos_t selected;
 
@@ -69,42 +71,28 @@ void init_game()
     unselect();
 
     turn = WHITE;
-}
 
-pos_t find_piece(piece_type_t piece, color_t color)
-{
-    for (uint8_t y = 0; y < 8; y++)
-    {
-        for (uint8_t x = 0; x < 8; x++)
-        {
-            if (BOARD(x, y).type == piece && BOARD(x, y).color == color)
-            {
-                return (pos_t){x, y};
-            }
-        }
-    }
-
-    return (pos_t){0, 0}; // Not found
+    in_check = false;
 }
 
 pos_t piece_moves[24];
 uint8_t piece_moves_count;
 
-#define check_in(x, y) (x < 7 && y < 7)  // >= 0 check not necessary because unsigned
-#define check_in_s(x, y) (x >= 0 && x < 7 && y >= 0 && y < 7)
+#define check_in(x, y) (x < 8 && y < 8)  // >= 0 check not necessary because unsigned
+#define check_in_s(x, y) (x >= 0 && x < 8 && y >= 0 && y < 8)
 
 #define add_move(x, y) piece_moves[piece_moves_count++] = (pos_t) { x, y };  // do {piece_moves[piece_moves_count++] = (pos_t) { x, y }; dbg_printf("%d: %d, %d\n", __LINE__, x - 1, y - 1);} while (0)
 #define add_move_in(x, y) \
     if (check_in(x, y)) \
         add_move(x, y)
 #define add_move_if_piece(x, y, color_) \
-    if (check_in(x, y) && BOARD(x, y).type != NONE && BOARD(x, y).color != color_) \
+    if (check_in(x, y) && (BOARD(x, y).type != NONE && BOARD(x, y).color != color_)) \
         add_move(x, y)
 #define add_move_if_no_piece(x, y) \
     if (check_in(x, y) && BOARD(x, y).type == NONE) \
         add_move(x, y)
 #define add_move_if_possible(x, y, color_) \
-    if (check_in(x, y) && BOARD(x, y).type == NONE || BOARD(x, y).color != color_) \
+    if (check_in(x, y) && (BOARD(x, y).type == NONE || BOARD(x, y).color != color_)) \
         add_move(x, y)
 
 void get_pawn_moves(piece_t piece, uint8_t x, uint8_t y)
@@ -157,7 +145,7 @@ void add_move_ray(uint8_t x, uint8_t y, int8_t kx, int8_t ky, color_t color)
 {
     for (int8_t i = 1; i < 8; i++)
     {
-        if (!check_in_s(x + kx * i, y + ky * i) || (BOARD(x + kx * i, y + ky * i).type != NONE && BOARD(x + kx * i, y + ky * i).color == color))
+        if (!check_in_s(x + kx * i, y + ky * i) || ((BOARD(x + kx * i, y + ky * i).type != NONE && BOARD(x + kx * i, y + ky * i).color == color)))
             break;
 
         add_move(x + kx * i, y + ky * i);
@@ -244,6 +232,21 @@ void get_piece_moves(piece_t piece, uint8_t x, uint8_t y)
     // }
 }
 
+pos_t find_piece(piece_type_t piece, color_t color)
+{
+    for (uint8_t y = 0; y < 8; y++)
+    {
+        for (uint8_t x = 0; x < 8; x++)
+        {
+            if (BOARD(x, y).type == piece && BOARD(x, y).color == color)
+            {
+                return (pos_t){x, y};
+            }
+        }
+    }
+
+    return (pos_t){0, 0}; // Not found
+}
 
 bool is_in_check(color_t color)
 {
@@ -254,7 +257,7 @@ bool is_in_check(color_t color)
         for (uint8_t x = 0; x < 8; x++)
         {
             piece_t piece = BOARD(x, y);
-            if (piece.color != color && piece.type != NONE)
+            if (piece.type != NONE && piece.color != color)
             {
                 // Check if the piece threaten the king
                 get_piece_moves(piece, x, y);
@@ -267,6 +270,28 @@ bool is_in_check(color_t color)
             }
         }
     }
+
+    return false;
+}
+
+void do_move(piece_t piece, uint8_t x, uint8_t y, pos_t move)
+{
+    BOARD_POS(move) = piece;
+    BOARD(x, y).type = NONE;
+}
+
+bool try_move(piece_t piece, uint8_t x, uint8_t y, pos_t move)
+{
+    piece_t old_board[8 * 8];
+
+    memcpy(old_board, board, sizeof(old_board));
+
+    do_move(piece, x, y, move);
+
+    if (!is_in_check(piece.color))
+        return true;
+    
+    memcpy(board, old_board, sizeof(board));
 
     return false;
 }
@@ -295,6 +320,13 @@ void draw_potential(uint8_t n, color_t color, uint8_t x, uint8_t y)
     gfx_TransparentSprite(sprite, OF_X + x * TILE_W, OF_Y + y * TILE_H);
 }
 
+void draw_check(uint8_t x, uint8_t y)
+{
+    gfx_sprite_t *sprite = chess_tiles[17];
+
+    gfx_TransparentSprite(sprite, OF_X + x * TILE_W, OF_Y + y * TILE_H);
+}
+
 bool potential_move[8*8];
 
 void draw_board()
@@ -314,6 +346,10 @@ void draw_board()
             if (BOARD(x, y).type != NONE)
             {
                 draw_piece(BOARD(x, y), x, y);
+            }
+            if (in_check && BOARD(x, y).type == KING)
+            {
+                draw_check(x, y);
             }
             if (potential_move[POS_XY(x, y)])
             {
@@ -356,19 +392,21 @@ void select()
         return;
     }
 
-    // check valid move
-
-    // if (cursor_piece.type != NONE) {
-    //     // mark the piece as taken
-    // }
-
-    cursor_piece = selected_piece;
-    selected_piece.type = NONE;
-    unselect();
-
-    turn = !turn;
+    for (uint8_t i = 0; i < piece_moves_count; i++)
+    {
+        if (piece_moves[i].x == cursor.x && piece_moves[i].y == cursor.y)
+        {
+            if (try_move(selected_piece, selected.x, selected.y, cursor))
+            {
+                turn = !turn;
+                in_check = is_in_check(turn);
+            }
+            break;
+        }
+    }
 
     redraw = true;
+    unselect();
 }
 
 // screens.h functions

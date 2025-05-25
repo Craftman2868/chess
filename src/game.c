@@ -645,10 +645,12 @@ void step_game()
     }
     else if (circle_size < 3)
     {
-        circle_size+=2;
+        // circle_size+=2;
+        circle_size++;
+        // if (circle_size > 3)
+        //     circle_size = 3;
+
         redraw = true;
-        if (circle_size > 3)
-            circle_size = 3;
     }
 }
 

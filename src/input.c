@@ -3,7 +3,7 @@
 #include <keypadc.h>
 #include "main.h"
 
-#define KEY_REPEAT_INTERVAL 5
+#define KEY_REPEAT_INTERVAL 5  // ticks
 #define EVENT_QUEUE_LENGTH 32
 
 uint8_t last_kb[8];

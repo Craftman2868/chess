@@ -19,6 +19,7 @@
 
 piece_t board[8 * 8];
 color_t turn;
+bool king_moved[2];
 bool in_check;
 pos_t cursor;
 pos_t selected;
@@ -74,6 +75,8 @@ void init_game()
     turn = WHITE;
 
     in_check = false;
+    king_moved[BLACK] = 0;
+    king_moved[WHITE] = 0;
 }
 
 pos_t piece_moves[24];
@@ -82,7 +85,7 @@ uint8_t piece_moves_count;
 #define check_in(x, y) (x < 8 && y < 8)  // >= 0 check not necessary because unsigned
 #define check_in_s(x, y) (x >= 0 && x < 8 && y >= 0 && y < 8)
 
-#define add_move(x, y) piece_moves[piece_moves_count++] = (pos_t) { x, y };  // do {piece_moves[piece_moves_count++] = (pos_t) { x, y }; dbg_printf("%d: %d, %d\n", __LINE__, x - 1, y - 1);} while (0)
+#define add_move(x, y) piece_moves[piece_moves_count++] = (pos_t) { x, y }  // do {piece_moves[piece_moves_count++] = (pos_t) { x, y }; dbg_printf("%d: %d, %d\n", __LINE__, x - 1, y - 1);} while (0)
 #define add_move_in(x, y) \
     if (check_in(x, y)) \
         add_move(x, y)
@@ -192,7 +195,11 @@ void get_king_moves(piece_t piece, uint8_t x, uint8_t y)
         }
     }
 
-    // TODO: castling
+    if (!king_moved[piece.color])
+    {
+        if (BOARD(5, y).type == NONE && BOARD(6, y).type == NONE)
+            add_move(6, y);
+    }
 }
 
 void get_piece_moves(piece_t piece, uint8_t x, uint8_t y)
@@ -249,24 +256,26 @@ pos_t find_piece(piece_type_t piece, color_t color)
     return (pos_t){0, 0}; // Not found
 }
 
-bool is_in_check(color_t color)
+bool is_any_threatened(pos_t *pos, uint8_t pos_count, color_t color)
 {
-    pos_t king = find_piece(KING, color);
-
     for (uint8_t y = 0; y < 8; y++)
     {
         for (uint8_t x = 0; x < 8; x++)
         {
             piece_t piece = BOARD(x, y);
+
             if (piece.type != NONE && piece.color != color)
             {
-                // Check if the piece threaten the king
+                // Check if the piece threaten the sqare
                 get_piece_moves(piece, x, y);
 
                 for (uint8_t i = 0; i < piece_moves_count; i++)
                 {
-                    if (piece_moves[i].x == king.x && piece_moves[i].y == king.y)
-                        return true;  // King is in check
+                    for (uint8_t j = 0; j < pos_count; j++)
+                    {
+                        if (piece_moves[i].x == pos[j].x && piece_moves[i].y == pos[j].y)
+                            return true;
+                    }
                 }
             }
         }
@@ -275,10 +284,31 @@ bool is_in_check(color_t color)
     return false;
 }
 
+bool is_threatened(pos_t pos, color_t color)
+{
+    return is_any_threatened(&pos, 1, color);
+}
+
+bool is_in_check(color_t color)
+{
+    pos_t king = find_piece(KING, color);
+
+    return is_threatened(king, color);
+}
+
 void do_move(uint8_t x, uint8_t y, pos_t move)
 {
     BOARD_POS(move) = BOARD(x, y);
     BOARD(x, y).type = NONE;
+
+    if (BOARD_POS(move).type == KING
+        && !king_moved[BOARD_POS(move).color]
+        && move.x == 6
+        && BOARD(7, y).type == ROOK)
+    {  // Castling
+        BOARD(5, y) = BOARD(7, y);
+        BOARD(7, y).type = NONE;
+    }
 }
 
 // bool try_move(piece_t piece, uint8_t x, uint8_t y, pos_t move)
@@ -299,6 +329,11 @@ void do_move(uint8_t x, uint8_t y, pos_t move)
 
 bool is_move_valid(uint8_t x, uint8_t y, pos_t move)
 {
+    if (BOARD(x, y).type == KING && !king_moved[BOARD(x, y).color] && move.x == 6)
+    {  // Castling
+        return !is_any_threatened((pos_t []){{4, y}, {5, y}, {6, y}}, 3, BOARD(x, y).color);
+    }
+
     piece_t old_board[8 * 8];
     bool res;
 
@@ -392,6 +427,17 @@ void draw_board()
 
 bool played_animation = false;
 
+void end_turn()
+{
+    if (cursor_piece.type == KING)
+    {
+        king_moved[turn] = true;
+    }
+    turn = !turn;
+    in_check = is_in_check(turn);
+    played_animation = true;
+}
+
 // Called when enter is pressed
 void select()
 {
@@ -414,9 +460,7 @@ void select()
     if (potential_moves[POS(cursor)])
     {
         do_move(selected.x, selected.y, cursor);
-        turn = !turn;
-        in_check = is_in_check(turn);
-        played_animation = true;
+        end_turn();
     }
     else
     {

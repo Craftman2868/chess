@@ -5,7 +5,7 @@
 
 #define DEBUGGING false
 
-#define TICK_TIME 10  // ms
+#define TICK_TIME 50  // ms
 #define TEXT_SCALE 2  // times
 
 // extern bool partial_redraw;

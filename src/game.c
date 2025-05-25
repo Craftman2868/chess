@@ -22,6 +22,7 @@ color_t turn;
 bool in_check;
 pos_t cursor;
 pos_t selected;
+uint8_t circle_size = 0;
 
 #define POS_XY(x, y) ((y) * 8 + (x))
 #define POS(p) (p.y * 8 + p.x)
@@ -369,7 +370,7 @@ void draw_board()
             }
             if (potential_moves[POS_XY(x, y)])
             {
-                draw_potential(3, (x + y) % 2, x, y);
+                draw_potential(circle_size, (x + y) % 2, x, y);
             }
             if (selected.x == x && selected.y == y)
             {
@@ -388,6 +389,8 @@ void draw_board()
         }
     }
 }
+
+bool played_animation = false;
 
 // Called when enter is pressed
 void select()
@@ -413,9 +416,12 @@ void select()
         do_move(selected.x, selected.y, cursor);
         turn = !turn;
         in_check = is_in_check(turn);
+        played_animation = true;
     }
-
-    redraw = true;
+    else
+    {
+        redraw = true;  // Do set redraw if played to not cancel played_animation, will be set later anyway
+    }
     unselect();
 }
 
@@ -428,11 +434,19 @@ void calc_potential_moves()
     else
         piece_moves_count = 0;
 
+    // if (piece_moves_count == 0)  // animation to remove circles when possible (no other circles to draw)
+    // {                            // causes display bugs then crash (severe memory corruption)
+    //     played_animation = true;
+    //     return;
+    // }
+    
     for (uint8_t i = 0; i < 8 * 8; i++)
         potential_moves[i] = false;
-    
+
     if (piece_moves_count == 0)
+    {
         return;
+    }
 
     uint8_t piece_moves_count_temp = piece_moves_count;
     pos_t piece_moves_temp[piece_moves_count_temp];
@@ -465,6 +479,24 @@ void begin_game()
 
     gfx_SetPalette(global_palette, sizeof_global_palette, 0);
     gfx_SetTransparentColor(0);
+}
+
+void step_played_animation()
+{
+    if (circle_size == 3)
+        potential_moves[POS(cursor)] = false;
+
+    circle_size--;
+
+    if (circle_size == 0)
+    {
+        played_animation = false;
+
+        for (uint8_t i = 0; i < 8 * 8; i++)
+            potential_moves[i] = false;
+    }
+
+    redraw = true;
 }
 
 void step_game()
@@ -525,11 +557,30 @@ void step_game()
         }
     }
 
-    if (redraw && (old_s.x != selected.x || old_s.y != selected.y || is_selected == false))
+    if (played_animation)
     {
-        // To do in last (must be set for draw_game())
+        if (!redraw)
+        {
+            step_played_animation();
+            return;
+        }
+        played_animation = false;
+    }
 
+    if (redraw
+        && (old_s.x != selected.x || old_s.y != selected.y || is_selected == false)
+        && (cursor.x != selected.x || cursor.y != selected.y)
+        && (cursor.x != old_s.x || cursor.y != old_s.y))
+    {
         calc_potential_moves();
+        circle_size = ticks % 2;
+    }
+    else if (circle_size < 3)
+    {
+        circle_size+=2;
+        redraw = true;
+        if (circle_size > 3)
+            circle_size = 3;
     }
 }
 

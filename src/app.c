@@ -50,7 +50,7 @@ void main_menu_callback(short item);
 
 void begin()
 {
-    static const char *items[] = {"Play", "Quit", "A", "B", "C", "D", "E"};
+    static const char *items[] = {"Play", "Quit"};
 
     running = true;
 

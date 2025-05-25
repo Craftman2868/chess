@@ -274,26 +274,42 @@ bool is_in_check(color_t color)
     return false;
 }
 
-void do_move(piece_t piece, uint8_t x, uint8_t y, pos_t move)
+void do_move(uint8_t x, uint8_t y, pos_t move)
 {
-    BOARD_POS(move) = piece;
+    BOARD_POS(move) = BOARD(x, y);
     BOARD(x, y).type = NONE;
 }
 
-bool try_move(piece_t piece, uint8_t x, uint8_t y, pos_t move)
+// bool try_move(piece_t piece, uint8_t x, uint8_t y, pos_t move)
+// {
+//     piece_t old_board[8 * 8];
+
+//     memcpy(old_board, board, sizeof(old_board));
+
+//     do_move(piece, x, y, move);
+
+//     if (!is_in_check(piece.color))
+//         return true;
+    
+//     memcpy(board, old_board, sizeof(board));
+
+//     return false;
+// }
+
+bool is_move_valid(uint8_t x, uint8_t y, pos_t move)
 {
     piece_t old_board[8 * 8];
+    bool res;
 
     memcpy(old_board, board, sizeof(old_board));
 
-    do_move(piece, x, y, move);
+    do_move(x, y, move);
 
-    if (!is_in_check(piece.color))
-        return true;
-    
+    res = !is_in_check(BOARD(x, y).color);
+
     memcpy(board, old_board, sizeof(board));
 
-    return false;
+    return res;
 }
 
 gfx_sprite_t *get_piece_sprite(piece_type_t piece, color_t color)
@@ -327,7 +343,7 @@ void draw_check(uint8_t x, uint8_t y)
     gfx_TransparentSprite(sprite, OF_X + x * TILE_W, OF_Y + y * TILE_H);
 }
 
-bool potential_move[8*8];
+bool potential_moves[8*8];
 
 void draw_board()
 {
@@ -351,7 +367,7 @@ void draw_board()
             {
                 draw_check(x, y);
             }
-            if (potential_move[POS_XY(x, y)])
+            if (potential_moves[POS_XY(x, y)])
             {
                 draw_potential(3, (x + y) % 2, x, y);
             }
@@ -392,21 +408,53 @@ void select()
         return;
     }
 
-    for (uint8_t i = 0; i < piece_moves_count; i++)
+    if (potential_moves[POS(cursor)])
     {
-        if (piece_moves[i].x == cursor.x && piece_moves[i].y == cursor.y)
-        {
-            if (try_move(selected_piece, selected.x, selected.y, cursor))
-            {
-                turn = !turn;
-                in_check = is_in_check(turn);
-            }
-            break;
-        }
+        do_move(selected.x, selected.y, cursor);
+        turn = !turn;
+        in_check = is_in_check(turn);
     }
 
     redraw = true;
     unselect();
+}
+
+void calc_potential_moves()
+{
+    if (is_selected)
+        get_piece_moves(selected_piece, selected.x, selected.y);
+    else if (cursor_piece.type != NONE && cursor_piece.color == turn)
+        get_piece_moves(cursor_piece, cursor.x, cursor.y);
+    else
+        piece_moves_count = 0;
+
+    for (uint8_t i = 0; i < 8 * 8; i++)
+        potential_moves[i] = false;
+    
+    if (piece_moves_count == 0)
+        return;
+
+    uint8_t piece_moves_count_temp = piece_moves_count;
+    pos_t piece_moves_temp[piece_moves_count_temp];
+
+    memcpy(piece_moves_temp, piece_moves, sizeof(pos_t) * piece_moves_count_temp);
+
+    for (uint8_t i = 0; i < piece_moves_count_temp; i++)
+    {
+        pos_t move = piece_moves_temp[i];
+        if (is_selected)
+        {
+            if (!is_move_valid(selected.x, selected.y, move))
+                continue;
+        }
+        else
+        {
+            if (!is_move_valid(cursor.x, cursor.y, move))
+                continue;
+        }
+
+        potential_moves[POS(move)] = true;
+    }
 }
 
 // screens.h functions
@@ -481,21 +529,7 @@ void step_game()
     {
         // To do in last (must be set for draw_game())
 
-        if (selected_piece.type != NONE && selected_piece.color == turn)
-            get_piece_moves(selected_piece, selected.x, selected.y);
-        else if (cursor_piece.type != NONE && cursor_piece.color == turn)
-            get_piece_moves(cursor_piece, cursor.x, cursor.y);
-        else
-            piece_moves_count = 0;
-        
-        for (uint8_t i = 0; i < 8 * 8; i++)
-            potential_move[i] = false;
-
-        for (uint8_t i = 0; i < piece_moves_count; i++)
-        {
-            pos_t move = piece_moves[i];
-            potential_move[POS(move)] = true;
-        }
+        calc_potential_moves();
     }
 }
 

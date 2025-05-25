@@ -19,7 +19,7 @@
 
 piece_t board[8 * 8];
 color_t turn;
-bool king_moved[2];
+bool king_moved[2];  // TODO? check if rook moved, too
 bool in_check;
 pos_t cursor;
 pos_t selected;
@@ -197,8 +197,17 @@ void get_king_moves(piece_t piece, uint8_t x, uint8_t y)
 
     if (!king_moved[piece.color])
     {
-        if (BOARD(5, y).type == NONE && BOARD(6, y).type == NONE)
+        if (BOARD(7, y).type == ROOK
+            && BOARD(7, y).color == piece.color
+            && BOARD(5, y).type == NONE
+            && BOARD(6, y).type == NONE)
             add_move(6, y);
+        if (BOARD(0, y).type == ROOK
+            && BOARD(0, y).color == piece.color
+            && BOARD(3, y).type == NONE
+            && BOARD(2, y).type == NONE
+            && BOARD(1, y).type == NONE)
+            add_move(2, y);
     }
 }
 
@@ -302,12 +311,20 @@ void do_move(uint8_t x, uint8_t y, pos_t move)
     BOARD(x, y).type = NONE;
 
     if (BOARD_POS(move).type == KING
-        && !king_moved[BOARD_POS(move).color]
-        && move.x == 6
-        && BOARD(7, y).type == ROOK)
-    {  // Castling
-        BOARD(5, y) = BOARD(7, y);
-        BOARD(7, y).type = NONE;
+        && !king_moved[BOARD_POS(move).color])
+    {
+        if (move.x == 6
+            && BOARD(7, y).type == ROOK)
+        {  // Short castling
+            BOARD(5, y) = BOARD(7, y);
+            BOARD(7, y).type = NONE;
+        }
+        else if (move.x == 2
+                 && BOARD(0, y).type == ROOK)
+        {  // Long castling
+            BOARD(3, y) = BOARD(0, y);
+            BOARD(0, y).type = NONE;
+        }
     }
 }
 
@@ -329,9 +346,16 @@ void do_move(uint8_t x, uint8_t y, pos_t move)
 
 bool is_move_valid(uint8_t x, uint8_t y, pos_t move)
 {
-    if (BOARD(x, y).type == KING && !king_moved[BOARD(x, y).color] && move.x == 6)
-    {  // Castling
-        return !is_any_threatened((pos_t []){{4, y}, {5, y}, {6, y}}, 3, BOARD(x, y).color);
+    if (BOARD(x, y).type == KING && !king_moved[BOARD(x, y).color])
+    {
+        if (move.x == 6)
+        {  // Short castling
+            return !is_any_threatened((pos_t []){{4, y}, {5, y}, {6, y}}, 3, BOARD(x, y).color);
+        }
+        else if (move.x == 2)
+        {  // Long castling
+            return !is_any_threatened((pos_t []){{1, y}, {2, y}, {3, y}, {4, y}}, 4, BOARD(x, y).color);
+        }
     }
 
     piece_t old_board[8 * 8];

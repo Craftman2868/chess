@@ -24,6 +24,10 @@ bool in_check;
 pos_t cursor;
 pos_t selected;
 uint8_t circle_size = 0;
+uint8_t promotion_menu_of = 8;  // 8 means no promotion menu
+uint8_t promotion_menu_item;
+
+#define PROMOTION 255  // Any number between 8 and 255
 
 #define POS_XY(x, y) ((y) * 8 + (x))
 #define POS(p) (p.y * 8 + p.x)
@@ -111,7 +115,8 @@ void get_pawn_moves(piece_t piece, uint8_t x, uint8_t y)
         add_move_if_piece(x - 1, y + 1, BLACK);
         add_move_if_piece(x + 1, y + 1, BLACK);
     }
-    // TODO: en passant (maybe not here)
+
+    // TODO: en passant
     
     if (piece.color == WHITE)
     {
@@ -191,7 +196,7 @@ void get_king_moves(piece_t piece, uint8_t x, uint8_t y)
     {
         for (int8_t ky = -1; ky < 2; ky++)
         {
-            add_move_if_possible(x+kx, y+ky, piece.color);
+            add_move_if_possible((uint8_t) (x+kx), (uint8_t) (y+ky), piece.color);
         }
     }
 
@@ -381,7 +386,10 @@ void draw_piece(piece_t piece, uint8_t x, uint8_t y)
 {
     gfx_sprite_t *sprite = get_piece_sprite(piece.type, piece.color);
 
-    gfx_TransparentSprite(sprite, OF_X + x * TILE_W, OF_Y + y * TILE_H);
+    if (y == PROMOTION)
+        gfx_TransparentSprite(sprite, OF_X + x * TILE_W, OF_Y + (1-turn) * 9 * TILE_H - TILE_H);
+    else
+        gfx_TransparentSprite(sprite, OF_X + x * TILE_W, OF_Y + y * TILE_H);
 }
 
 gfx_sprite_t *get_potential_sprite(uint8_t n, color_t color)
@@ -423,7 +431,7 @@ void draw_board()
             {
                 draw_piece(BOARD(x, y), x, y);
             }
-            if (in_check && BOARD(x, y).type == KING)
+            if (in_check && BOARD(x, y).type == KING && BOARD(x, y).color == turn)
             {
                 draw_check(x, y);
             }
@@ -431,20 +439,38 @@ void draw_board()
             {
                 draw_potential(circle_size, (x + y) % 2, x, y);
             }
-            if (selected.x == x && selected.y == y)
-            {
-                gfx_SetColor(3); // Red
-                gfx_Rectangle(OF_X + x * TILE_W, OF_Y + y * TILE_H, TILE_W, TILE_H);
-                gfx_Rectangle(OF_X + x * TILE_W + 1, OF_Y + y * TILE_H + 1, TILE_W - 2, TILE_H - 2);
-                gfx_SetColor(2); // Grey
-            }
-            else if (cursor.x == x && cursor.y == y)
-            {
-                gfx_SetColor(4); // Blue
-                gfx_Rectangle(OF_X + x * TILE_W, OF_Y + y * TILE_H, TILE_W, TILE_H);
-                gfx_Rectangle(OF_X + x * TILE_W + 1, OF_Y + y * TILE_H + 1, TILE_W - 2, TILE_H - 2);
-                gfx_SetColor(2); // Grey
-            }
+        }
+    }
+
+    // Cursor
+    if (cursor.y < 8)
+    {
+        gfx_SetColor(4); // Blue
+        gfx_Rectangle(OF_X + cursor.x * TILE_W, OF_Y + cursor.y * TILE_H, TILE_W, TILE_H);
+        gfx_Rectangle(OF_X + cursor.x * TILE_W + 1, OF_Y + cursor.y * TILE_H + 1, TILE_W - 2, TILE_H - 2);
+    }
+
+    // Selector
+    if (is_selected)
+    {
+        gfx_SetColor(3); // Red
+        gfx_Rectangle(OF_X + selected.x * TILE_W, OF_Y + selected.y * TILE_H, TILE_W, TILE_H);
+        gfx_Rectangle(OF_X + selected.x * TILE_W + 1, OF_Y + selected.y * TILE_H + 1, TILE_W - 2, TILE_H - 2);
+    }
+
+    if (promotion_menu_of < 8)
+    {
+        for (uint8_t i = 0; i < 4; i++)
+        {
+            draw_piece((piece_t){i + 2, turn}, i + promotion_menu_of, PROMOTION);
+        }
+
+        if (cursor.y == PROMOTION)
+        {
+            // dbg_printf("item: %d\n", promotion_menu_item);
+            gfx_SetColor(4); // Blue
+            gfx_Rectangle(OF_X + (promotion_menu_of + promotion_menu_item) * TILE_W, OF_Y + (1-turn) * 9 * TILE_H - TILE_H, TILE_W, TILE_H);
+            gfx_Rectangle(OF_X + (promotion_menu_of + promotion_menu_item) * TILE_W + 1, OF_Y + (1-turn) * 9 * TILE_H - TILE_H + 1, TILE_W - 2, TILE_H - 2);
         }
     }
 }
@@ -474,6 +500,18 @@ void select()
         return;
     }
 
+    if (cursor.y == PROMOTION)
+    {
+        cursor.y = 7 * (1-turn);
+        cursor_piece.type = promotion_menu_item + 2;
+        cursor_piece.color = turn;
+        selected_piece.type = NONE;
+        promotion_menu_of = 8;
+        unselect();
+        end_turn();
+        return;
+    }
+
     if (cursor.x == selected.x && cursor.y == selected.y)
     {
         unselect();
@@ -483,6 +521,14 @@ void select()
 
     if (potential_moves[POS(cursor)])
     {
+        if (selected_piece.type == PAWN
+            && (cursor.y == 0 || cursor.y == 7))
+        {
+            cursor.y = PROMOTION;
+            promotion_menu_item = cursor.x - promotion_menu_of;
+            redraw = true;
+            return;
+        }
         do_move(selected.x, selected.y, cursor);
         end_turn();
     }
@@ -491,6 +537,96 @@ void select()
         redraw = true;  // Do set redraw if played to not cancel played_animation, will be set later anyway
     }
     unselect();
+}
+
+void cursor_up()
+{
+    if (cursor.y == PROMOTION && turn == BLACK)
+    {
+        cursor.y = 7;
+        redraw = true;
+        return;
+    }
+
+    if (selected_piece.type == PAWN
+        && cursor.y == 0
+        && potential_moves[POS(cursor)])
+    {
+        cursor.y = PROMOTION;
+        promotion_menu_item = cursor.x - promotion_menu_of;
+        redraw = true;
+        return;
+    }
+
+    if (cursor.y > 0)
+    {
+        cursor.y--;
+        redraw = true;
+    }
+}
+
+void cursor_down()
+{
+    if (cursor.y == PROMOTION && turn == WHITE)
+    {
+        cursor.y = 0;
+        redraw = true;
+        return;
+    }
+
+    if (selected_piece.type == PAWN
+        && cursor.y == 7
+        && potential_moves[POS(cursor)])
+    {
+        cursor.y = PROMOTION;
+        promotion_menu_item = cursor.x - promotion_menu_of;
+        redraw = true;
+        return;
+    }
+
+    if (cursor.y < 7)
+    {
+        cursor.y++;
+        redraw = true;
+    }
+}
+
+void cursor_left()
+{
+    if (cursor.y == PROMOTION)
+    {
+        if (promotion_menu_item > 0)
+        {
+            promotion_menu_item--;
+            redraw = true;
+        }
+        return;
+    }
+
+    if (cursor.x > 0)
+    {
+        cursor.x--;
+        redraw = true;
+    }
+}
+
+void cursor_right()
+{
+    if (cursor.y == PROMOTION)
+    {
+        if (promotion_menu_item < 3)
+        {
+            promotion_menu_item++;
+            redraw = true;
+        }
+        return;
+    }
+
+    if (cursor.x < 7)
+    {
+        cursor.x++;
+        redraw = true;
+    }
 }
 
 void calc_potential_moves()
@@ -579,42 +715,40 @@ void step_game()
 
         switch (event.key.group)
         {
+        // TEMP
+        case 1:
+            if (event.key.key == kb_Mode)
+            {
+                turn = !turn;
+                redraw = true;
+            }
+            else if (event.key.key == kb_Del)
+            {
+                cursor_piece.type = NONE;
+                redraw = true;
+            }
+            break;
+        // /TEMP
         case 6:
             if (event.key.key == kb_Clear)
                 running = false;
-            if (event.key.key == kb_Enter)
+            else if (event.key.key == kb_Enter)
                 select();
             break;
         case 7:
             switch (event.key.key)
             {
             case kb_Up:
-                if (cursor.y > 0)
-                {
-                    cursor.y--;
-                    redraw = true;
-                }
+                cursor_up();
                 break;
             case kb_Down:
-                if (cursor.y < 7)
-                {
-                    cursor.y++;
-                    redraw = true;
-                }
+                cursor_down();
                 break;
             case kb_Left:
-                if (cursor.x > 0)
-                {
-                    cursor.x--;
-                    redraw = true;
-                }
+                cursor_left();
                 break;
             case kb_Right:
-                if (cursor.x < 7)
-                {
-                    cursor.x++;
-                    redraw = true;
-                }
+                cursor_right();
                 break;
             default:
                 break;
@@ -651,6 +785,25 @@ void step_game()
         //     circle_size = 3;
 
         redraw = true;
+    }
+
+    if (redraw
+        && selected_piece.type == PAWN
+        && (cursor.y == PROMOTION
+            || ((cursor.y == 0 || cursor.y == 7)
+                && potential_moves[POS(cursor)])))  // The cursor is on a promotion circle or in the promotion menu
+    {
+        if (cursor.x < 2)
+            promotion_menu_of = 0;
+        else if (cursor.x > 5)
+            promotion_menu_of = 4;
+        else
+            promotion_menu_of = cursor.x - 2;
+        redraw = true;
+    }
+    else if (redraw)
+    {
+        promotion_menu_of = 8;  // No promotion menu
     }
 }
 

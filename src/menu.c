@@ -12,6 +12,8 @@
 
 #define DEFAULT_TEXT_HEIGHT 8  // px  (can't be changed)
 
+#define TEXT_SCALE 2  // times
+
 #define TEXT_HEIGHT (DEFAULT_TEXT_HEIGHT * TEXT_SCALE)
 
 #define MENU_MARGIN_TOP 30  // px
@@ -89,10 +91,10 @@ void handle_event(input_event_t event) {
     switch (event.key.group)
     {
     case 6:
-        if (event.key.key == kb_Enter)
-        {
+        if (event.key.key == kb_Clear)
+            running = false;
+        else if (event.key.key == kb_Enter)
             menu_select();
-        }
         break;
     case 7:
         switch (event.key.key)
@@ -113,6 +115,11 @@ void handle_event(input_event_t event) {
     default:
         break;
     }
+}
+
+void begin_menu()
+{
+    gfx_SetTextScale(TEXT_SCALE, TEXT_SCALE);
 }
 
 void step_menu()

@@ -4,6 +4,7 @@
 #include "main.h"
 
 // menu.c
+void begin_menu();
 void step_menu();
 void draw_menu();
 
@@ -17,5 +18,9 @@ void draw_game();
 void step_debug();
 void draw_debug();
 #endif  // DEBUGGING
+
+// end.c
+void step_end();
+void draw_end();
 
 #endif /* SCREENS_H */

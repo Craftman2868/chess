@@ -21,12 +21,16 @@ void screen_begin() {
         break;
 #endif  // DEBUGGING
     case SCREEN_MENU:
-        // No begin function (yet)
+        begin_menu();
         break;
 
     case SCREEN_GAME:
         begin_game();
         break;
+    
+    // case SCREEN_END:
+    //     begin_end();
+    //     break;
 
     default:
         break;
@@ -67,11 +71,11 @@ void main_menu_callback(short item)
 {
     switch (item)
     {
-    case 0: // Play
+    case 0:  // Play
         set_screen(SCREEN_GAME);
         break;
 
-    case 1: // Quit
+    case 1:  // Quit
         running = false;
         break;
 
@@ -105,6 +109,10 @@ bool step()
     case SCREEN_GAME:
         step_game();
         break;
+    
+    case SCREEN_END:
+        step_end();
+        break;
 
     default:
         running = false;  // Prevent an endless loop
@@ -129,6 +137,10 @@ void draw()
 
     case SCREEN_GAME:
         draw_game();
+        break;
+    
+    case SCREEN_END:
+        draw_end();
         break;
 
     default:

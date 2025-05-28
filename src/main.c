@@ -19,7 +19,6 @@ int main(void)
     gfx_Begin();
 
     gfx_SetDrawBuffer();
-    gfx_SetTextScale(TEXT_SCALE, TEXT_SCALE);
 
     while (step())
     {

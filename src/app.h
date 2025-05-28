@@ -10,7 +10,7 @@ enum {
 #endif  // DEBUGGING
     SCREEN_MENU,
     SCREEN_GAME,
-    SCREEN_CHECKMATE,
+    SCREEN_END,
 } typedef app_screen_t;
 
 extern bool running;

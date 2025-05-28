@@ -26,6 +26,7 @@ pos_t selected;
 uint8_t circle_size = 0;
 uint8_t promotion_menu_of = 8;  // 8 means no promotion menu
 uint8_t promotion_menu_item;
+game_state_t game_state;
 
 #define PROMOTION 255  // Any number between 8 and 255
 
@@ -51,6 +52,11 @@ void init_board()
     BOARD(6, 0) = (piece_t){KNIGHT, BLACK};
     BOARD(7, 0) = (piece_t){ROOK,   BLACK};
 
+    for (uint8_t i = POS_XY(0, 2); i < POS_XY(7, 5); i++)
+    {
+        board[i].type = NONE;
+    }
+
     BOARD(0, 7) = (piece_t){ROOK,   WHITE};
     BOARD(1, 7) = (piece_t){KNIGHT, WHITE};
     BOARD(2, 7) = (piece_t){BISHOP, WHITE};
@@ -71,7 +77,9 @@ void init_game()
 {
     init_board();
 
-    cursor.x = 0;
+    game_state = RUNNING;
+
+    cursor.x = 4;
     cursor.y = 7;
 
     unselect();
@@ -79,8 +87,8 @@ void init_game()
     turn = WHITE;
 
     in_check = false;
-    king_moved[BLACK] = 0;
-    king_moved[WHITE] = 0;
+    king_moved[BLACK] = false;
+    king_moved[WHITE] = false;
 }
 
 pos_t piece_moves[24];
@@ -475,8 +483,6 @@ void draw_board()
     }
 }
 
-game_state_t game_state;
-
 void check_end_game()
 {
     pos_t piece_moves_temp[24];
@@ -749,9 +755,9 @@ void step_played_animation()
 
 void step_game()
 {
-    if (game_state == CHECKMATE)
+    if (game_state != RUNNING && !played_animation)
     {
-        set_screen(SCREEN_CHECKMATE);
+        set_screen(SCREEN_END);
         return;
     }
 

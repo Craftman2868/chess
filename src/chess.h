@@ -18,6 +18,10 @@ enum {
     WHITE,
 } typedef color_t;
 
+extern color_t turn;
+
+#define winner (!turn)
+
 struct {
     piece_type_t type;
     color_t color;
@@ -32,5 +36,7 @@ enum {
     CHECKMATE,
     DRAW,
 } typedef game_state_t;
+
+extern game_state_t game_state;
 
 #endif /* CHESS_H */

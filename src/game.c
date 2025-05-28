@@ -475,6 +475,49 @@ void draw_board()
     }
 }
 
+game_state_t game_state;
+
+void check_end_game()
+{
+    pos_t piece_moves_temp[24];
+    uint8_t piece_moves_count_temp;
+
+    for (uint8_t y = 0; y < 8; y++)
+    {
+        for (uint8_t x = 0; x < 8; x++)
+        {
+            piece_t piece = BOARD(x, y);
+
+            if (piece.type != NONE && piece.color == turn)
+            {
+                get_piece_moves(piece, x, y);
+                memcpy(piece_moves_temp, piece_moves, sizeof(pos_t) * piece_moves_count);
+                piece_moves_count_temp = piece_moves_count;
+
+                for (uint8_t i = 0; i < piece_moves_count_temp; i++)
+                {
+                    if (is_move_valid(x, y, piece_moves_temp[i]))
+                    {
+                        // dbg_printf("%d (%d, %d): %d, %d\n", piece.type, x, y, piec_moves_temp[i].x, piec_moves_temp[i].y);
+                        game_state = RUNNING;
+                        return;
+                    }
+                }
+            }
+        }
+    }
+
+    // No valid move
+    if (in_check)
+    {
+        game_state = CHECKMATE;
+    }
+    else
+    {
+        game_state = DRAW;
+    }
+}
+
 bool played_animation = false;
 
 void end_turn()
@@ -486,6 +529,7 @@ void end_turn()
     turn = !turn;
     in_check = is_in_check(turn);
     played_animation = true;
+    check_end_game();
 }
 
 // Called when enter is pressed
@@ -643,7 +687,7 @@ void calc_potential_moves()
     //     played_animation = true;
     //     return;
     // }
-    
+
     for (uint8_t i = 0; i < 8 * 8; i++)
         potential_moves[i] = false;
 
@@ -705,6 +749,12 @@ void step_played_animation()
 
 void step_game()
 {
+    if (game_state == CHECKMATE)
+    {
+        set_screen(SCREEN_CHECKMATE);
+        return;
+    }
+
     input_event_t event;
     pos_t old_s = selected;
 

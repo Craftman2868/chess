@@ -16,15 +16,15 @@ void screen_begin() {
     switch (current_screen)
     {
 #if DEBUGGING
-    case DEBUG:
+    case SCREEN_DEBUG:
         // No begin function
         break;
 #endif  // DEBUGGING
-    case MENU:
+    case SCREEN_MENU:
         // No begin function (yet)
         break;
 
-    case GAME:
+    case SCREEN_GAME:
         begin_game();
         break;
 
@@ -55,7 +55,7 @@ void begin()
     running = true;
 
 #if DEBUGGING
-    set_screen(DEBUG);
+    set_screen(SCREEN_DEBUG);
 
     return;
 #endif  // DEBUGGING
@@ -68,7 +68,7 @@ void main_menu_callback(short item)
     switch (item)
     {
     case 0: // Play
-        set_screen(GAME);
+        set_screen(SCREEN_GAME);
         break;
 
     case 1: // Quit
@@ -94,15 +94,15 @@ bool step()
     switch (current_screen)
     {
 #if DEBUGGING
-    case DEBUG:
+    case SCREEN_DEBUG:
         step_debug();
         break;
 #endif  // DEBUGGING
-    case MENU:
+    case SCREEN_MENU:
         step_menu();
         break;
 
-    case GAME:
+    case SCREEN_GAME:
         step_game();
         break;
 
@@ -119,15 +119,15 @@ void draw()
     switch (current_screen)
     {
 #if DEBUGGING
-    case DEBUG:
+    case SCREEN_DEBUG:
         draw_debug();
         break;
 #endif  // DEBUGGING
-    case MENU:
+    case SCREEN_MENU:
         draw_menu();
         break;
 
-    case GAME:
+    case SCREEN_GAME:
         draw_game();
         break;
 

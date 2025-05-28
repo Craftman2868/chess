@@ -6,10 +6,11 @@
 
 enum {
 #if DEBUGGING
-    DEBUG,
+    SCREEN_DEBUG,
 #endif  // DEBUGGING
-    MENU,
-    GAME,
+    SCREEN_MENU,
+    SCREEN_GAME,
+    SCREEN_CHECKMATE,
 } typedef app_screen_t;
 
 extern bool running;

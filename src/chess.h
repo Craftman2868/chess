@@ -27,4 +27,10 @@ struct {
     uint8_t x, y;
 } typedef pos_t;
 
+enum {
+    RUNNING,
+    CHECKMATE,
+    DRAW,
+} typedef game_state_t;
+
 #endif /* CHESS_H */

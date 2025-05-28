@@ -41,7 +41,7 @@ void open_menu(const char *title, const char *items[], short item_count, void (*
     menu.current_item = 0;
     menu.offset = 0;
     menu.callback = callback;
-    set_screen(MENU);
+    set_screen(SCREEN_MENU);
 
     redraw = true;
 }

@@ -3,7 +3,7 @@
 # ----------------------------
 
 NAME = CHESS
-ICON = icon.png
+# ICON = icon.png
 DESCRIPTION = "Chess Game"
 COMPRESSED = YES
 

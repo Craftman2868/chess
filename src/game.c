@@ -401,8 +401,7 @@ void draw_check(uint8_t x, uint8_t y)
 
 bool check_material()
 {
-    uint8_t knight_count[2] = {0, 0};
-    uint8_t bishop_count[2] = {0, 0};
+    uint8_t piece_count[2] = {0, 0};
 
     for (uint8_t y = 0; y < 8; y++)
     {
@@ -413,17 +412,11 @@ bool check_material()
             if (piece.type == PAWN || piece.type == ROOK || piece.type == QUEEN)
                 return true;
 
-            if (piece.type == KNIGHT)
+            if (piece.type == KNIGHT || piece.type == BISHOP)
             {
-                knight_count[piece.color]++;
-                if (knight_count[piece.color] > 1)
-                    return true;  // More than one knight
-            }
-            else if (piece.type == BISHOP)
-            {
-                bishop_count[piece.color]++;
-                if (bishop_count[piece.color] > 1)
-                    return true;  // More than one bishop
+                piece_count[piece.color]++;
+                if (piece_count[piece.color] > 1)
+                    return true;  // More than one knight or bishop of the same color
             }
         }
     }

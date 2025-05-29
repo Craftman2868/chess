@@ -6,6 +6,13 @@
 #include "chess.h"
 
 
+unsigned int end_ticks;
+
+void begin_end()
+{
+    end_ticks = ticks;
+}
+
 void step_end()
 {
     input_event_t event;
@@ -15,7 +22,10 @@ void step_end()
         if (event.type != EV_KEY_DOWN && event.type != EV_KEY_REPEAT)
             continue;
         
-        set_screen(SCREEN_MENU);  // Go back to the main menu
+        if (event.key != kb_KeyClear && ticks - end_ticks < 20)
+            continue;
+
+        open_main_menu();  // Go back to the main menu
     }
 }
 

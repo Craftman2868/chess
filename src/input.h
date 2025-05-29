@@ -1,11 +1,11 @@
 #ifndef INPUT_H
 #define INPUT_H
 
-#include <stdint.h>
 #include <stdbool.h>
 #include <keypadc.h>
 
 #include "main.h"
+
 
 enum
 {

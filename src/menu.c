@@ -3,26 +3,24 @@
 
 #include <keypadc.h>
 #include <graphx.h>
-#include <sys/rtc.h>
 #include "main.h"
 #include "app.h"
 #include "input.h"
 
-#include <debug.h>
-
-#define DEFAULT_TEXT_HEIGHT 8  // px  (can't be changed)
 
 #define TEXT_SCALE 2  // times
-
-#define TEXT_HEIGHT (DEFAULT_TEXT_HEIGHT * TEXT_SCALE)
 
 #define MENU_MARGIN_TOP 30  // px
 #define MENU_MARGIN_LEFT 42  // px
 #define MENU_MARGIN_TITLE 24  // px
 #define MENU_MARGIN_TITLE_LEFT 64  // px
 #define TEXT_MARGIN 5  // px
+#define DISPLAY_ITEM_COUNT 4  // Maximun number of menu item that can be displayed
+#define ITEM_WIDTH 100  // px
+
+#define DEFAULT_TEXT_HEIGHT 8  // px  (can't be changed)
+#define TEXT_HEIGHT (DEFAULT_TEXT_HEIGHT * TEXT_SCALE)
 #define ITEM_HEIGHT (TEXT_HEIGHT + TEXT_MARGIN * 2)
-#define DISPLAY_ITEM_COUNT 4  // Number of menu item displayed
 #define MENU_ITEMS_MARGIN_TOP (MENU_MARGIN_TOP + TEXT_HEIGHT + MENU_MARGIN_TITLE)
 
 static struct
@@ -43,9 +41,10 @@ void open_menu(const char *title, const char *items[], short item_count, void (*
     menu.current_item = 0;
     menu.offset = 0;
     menu.callback = callback;
+
     set_screen(SCREEN_MENU);
 
-    redraw = true;
+    // redraw = true;  // set_screen already sets redraw
 }
 
 // Because the native '%' behave weirdly with negative numbers
@@ -159,7 +158,7 @@ void draw_menu()
             gfx_SetTextFGColor(0x20);
         }
 
-        gfx_FillRectangle(MENU_MARGIN_LEFT, MENU_ITEMS_MARGIN_TOP + i * ITEM_HEIGHT, 100, ITEM_HEIGHT);
+        gfx_FillRectangle(MENU_MARGIN_LEFT, MENU_ITEMS_MARGIN_TOP + i * ITEM_HEIGHT, ITEM_WIDTH, ITEM_HEIGHT);
 
         gfx_PrintStringXY(menu.items[item], MENU_MARGIN_LEFT + TEXT_MARGIN, MENU_ITEMS_MARGIN_TOP + TEXT_MARGIN + i * ITEM_HEIGHT);
     }

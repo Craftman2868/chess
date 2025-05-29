@@ -2,33 +2,33 @@
 #include "chess.h"
 
 #include <stdint.h>
+#include <string.h>  // memcpy, memset
 #include <keypadc.h>
 #include <graphx.h>
-#include <string.h>  // memcpy
 #include "app.h"
 #include "input.h"
 
 #include "gfx/gfx.h"
 
-#include <debug.h>
+// #include <debug.h>
 
 #define TILE_W 22  // px
 #define TILE_H 22  // px
 #define OF_X 50  // px  // Offset X
 #define OF_Y 30  // px  // Offset Y
 
+game_state_t game_state;
 piece_t board[8 * 8];
 color_t turn;
-bool king_moved[2];  // TODO? check if rook moved, too
 bool in_check;
+bool king_moved[2];  // TODO? check if rook moved, too
 pos_t cursor;
 pos_t selected;
 uint8_t circle_size = 0;
 uint8_t promotion_menu_of = 8;  // 8 means no promotion menu
 uint8_t promotion_menu_item;
-game_state_t game_state;
 
-#define PROMOTION 255  // Any number between 8 and 255
+#define PROMOTION 255  // Any constant number between 8 and 255
 
 #define POS_XY(x, y) ((y) * 8 + (x))
 #define POS(p) (p.y * 8 + p.x)
@@ -36,60 +36,9 @@ game_state_t game_state;
 #define BOARD_POS(p) board[POS(p)]
 
 #define cursor_piece BOARD_POS(cursor)
-
+#define selected_piece BOARD_POS(selected)  // WARNING: do not use if is_selected is false
 #define unselect() selected.x = 8
-#define is_selected (selected.x < 8)  // && selected.y < 8)
-#define selected_piece BOARD_POS(selected)
-
-void init_board()
-{
-    BOARD(0, 0) = (piece_t){ROOK,   BLACK};
-    BOARD(1, 0) = (piece_t){KNIGHT, BLACK};
-    BOARD(2, 0) = (piece_t){BISHOP, BLACK};
-    BOARD(3, 0) = (piece_t){QUEEN,  BLACK};
-    BOARD(4, 0) = (piece_t){KING,   BLACK};
-    BOARD(5, 0) = (piece_t){BISHOP, BLACK};
-    BOARD(6, 0) = (piece_t){KNIGHT, BLACK};
-    BOARD(7, 0) = (piece_t){ROOK,   BLACK};
-
-    for (uint8_t i = POS_XY(0, 2); i < POS_XY(7, 5); i++)
-    {
-        board[i].type = NONE;
-    }
-
-    BOARD(0, 7) = (piece_t){ROOK,   WHITE};
-    BOARD(1, 7) = (piece_t){KNIGHT, WHITE};
-    BOARD(2, 7) = (piece_t){BISHOP, WHITE};
-    BOARD(3, 7) = (piece_t){QUEEN,  WHITE};
-    BOARD(4, 7) = (piece_t){KING,   WHITE};
-    BOARD(5, 7) = (piece_t){BISHOP, WHITE};
-    BOARD(6, 7) = (piece_t){KNIGHT, WHITE};
-    BOARD(7, 7) = (piece_t){ROOK,   WHITE};
-
-    for (uint8_t i = 0; i < 8; i++)
-    {
-        BOARD(i, 1) = (piece_t){PAWN, BLACK};
-        BOARD(i, 6) = (piece_t){PAWN, WHITE};
-    }
-}
-
-void init_game()
-{
-    init_board();
-
-    game_state = RUNNING;
-
-    cursor.x = 4;
-    cursor.y = 7;
-
-    unselect();
-
-    turn = WHITE;
-
-    in_check = false;
-    king_moved[BLACK] = false;
-    king_moved[WHITE] = false;
-}
+#define is_selected (selected.x < 8)
 
 pos_t piece_moves[24];
 uint8_t piece_moves_count;
@@ -110,6 +59,59 @@ uint8_t piece_moves_count;
 #define add_move_if_possible(x, y, color_) \
     if (check_in(x, y) && (BOARD(x, y).type == NONE || BOARD(x, y).color != color_)) \
         add_move(x, y)
+
+bool potential_moves[8*8];
+bool played_animation = false;
+
+void init_board()
+{
+    BOARD(0, 0) = (piece_t){ROOK,   BLACK};
+    BOARD(1, 0) = (piece_t){KNIGHT, BLACK};
+    BOARD(2, 0) = (piece_t){BISHOP, BLACK};
+    BOARD(3, 0) = (piece_t){QUEEN,  BLACK};
+    BOARD(4, 0) = (piece_t){KING,   BLACK};
+    BOARD(5, 0) = (piece_t){BISHOP, BLACK};
+    BOARD(6, 0) = (piece_t){KNIGHT, BLACK};
+    BOARD(7, 0) = (piece_t){ROOK,   BLACK};
+
+    BOARD(0, 7) = (piece_t){ROOK,   WHITE};
+    BOARD(1, 7) = (piece_t){KNIGHT, WHITE};
+    BOARD(2, 7) = (piece_t){BISHOP, WHITE};
+    BOARD(3, 7) = (piece_t){QUEEN,  WHITE};
+    BOARD(4, 7) = (piece_t){KING,   WHITE};
+    BOARD(5, 7) = (piece_t){BISHOP, WHITE};
+    BOARD(6, 7) = (piece_t){KNIGHT, WHITE};
+    BOARD(7, 7) = (piece_t){ROOK,   WHITE};
+
+    for (uint8_t i = 0; i < 8; i++)
+    {
+        BOARD(i, 1) = (piece_t){PAWN, BLACK};
+        BOARD(i, 6) = (piece_t){PAWN, WHITE};
+    }
+
+    for (uint8_t i = POS_XY(0, 2); i < POS_XY(7, 5); i++)
+    {
+        board[i].type = NONE;
+    }
+}
+
+void init_game()
+{
+    init_board();
+
+    game_state = RUNNING;
+
+    cursor.x = 4;
+    cursor.y = 7;
+
+    unselect();
+
+    turn = WHITE;
+    in_check = false;
+    king_moved[BLACK] = false;
+    king_moved[WHITE] = false;
+    memset(potential_moves, 0, sizeof(potential_moves));
+}
 
 void get_pawn_moves(piece_t piece, uint8_t x, uint8_t y)
 {
@@ -162,7 +164,9 @@ void add_move_ray(uint8_t x, uint8_t y, int8_t kx, int8_t ky, color_t color)
 {
     for (int8_t i = 1; i < 8; i++)
     {
-        if (!check_in_s(x + kx * i, y + ky * i) || ((BOARD(x + kx * i, y + ky * i).type != NONE && BOARD(x + kx * i, y + ky * i).color == color)))
+        if (!check_in_s(x + kx * i, y + ky * i)
+            || (BOARD(x + kx * i, y + ky * i).type != NONE
+                && BOARD(x + kx * i, y + ky * i).color == color))
             break;
 
         add_move(x + kx * i, y + ky * i);
@@ -214,21 +218,20 @@ void get_king_moves(piece_t piece, uint8_t x, uint8_t y)
             && BOARD(7, y).color == piece.color
             && BOARD(5, y).type == NONE
             && BOARD(6, y).type == NONE)
-            add_move(6, y);
+            add_move(6, y);  // Short castling
         if (BOARD(0, y).type == ROOK
             && BOARD(0, y).color == piece.color
             && BOARD(3, y).type == NONE
             && BOARD(2, y).type == NONE
             && BOARD(1, y).type == NONE)
-            add_move(2, y);
+            add_move(2, y);  // Long castling
     }
 }
 
+// Doesn't check if the move is valid (e.g. if the king is in check after the move)
 void get_piece_moves(piece_t piece, uint8_t x, uint8_t y)
 {
     piece_moves_count = 0;
-
-    // dbg_printf("get_piece_moves({%d, %d}, %d, %d)\n", piece.type, piece.color, x, y);
 
     switch (piece.type)
     {
@@ -253,13 +256,6 @@ void get_piece_moves(piece_t piece, uint8_t x, uint8_t y)
     default:
         break;
     }
-
-    // // Print moves
-    // for (uint8_t i = 0; i < piece_moves_count; i++)
-    // {
-    //     pos_t move = piece_moves[i];
-    //     dbg_printf("move %d: {%d, %d}\n", i, move.x, move.y);
-    // }
 }
 
 pos_t find_piece(piece_type_t piece, color_t color)
@@ -275,10 +271,10 @@ pos_t find_piece(piece_type_t piece, color_t color)
         }
     }
 
-    return (pos_t){0, 0}; // Not found
+    return (pos_t){8, 8};  // Not found
 }
 
-bool is_any_threatened(pos_t *pos, uint8_t pos_count, color_t color)
+bool is_any_threatened(pos_t pos[], uint8_t pos_count, color_t color)
 {
     for (uint8_t y = 0; y < 8; y++)
     {
@@ -288,7 +284,7 @@ bool is_any_threatened(pos_t *pos, uint8_t pos_count, color_t color)
 
             if (piece.type != NONE && piece.color != color)
             {
-                // Check if the piece threaten the sqare
+                // Check if the piece threaten any of the squares in pos[]
                 get_piece_moves(piece, x, y);
 
                 for (uint8_t i = 0; i < piece_moves_count; i++)
@@ -340,22 +336,6 @@ void do_move(uint8_t x, uint8_t y, pos_t move)
         }
     }
 }
-
-// bool try_move(piece_t piece, uint8_t x, uint8_t y, pos_t move)
-// {
-//     piece_t old_board[8 * 8];
-
-//     memcpy(old_board, board, sizeof(old_board));
-
-//     do_move(piece, x, y, move);
-
-//     if (!is_in_check(piece.color))
-//         return true;
-    
-//     memcpy(board, old_board, sizeof(board));
-
-//     return false;
-// }
 
 bool is_move_valid(uint8_t x, uint8_t y, pos_t move)
 {
@@ -419,70 +399,6 @@ void draw_check(uint8_t x, uint8_t y)
     gfx_TransparentSprite(sprite, OF_X + x * TILE_W, OF_Y + y * TILE_H);
 }
 
-bool potential_moves[8*8];
-
-void draw_board()
-{
-    gfx_FillScreen(1); // White
-
-    gfx_SetColor(2); // Grey
-
-    for (uint8_t y = 0; y < 8; y++)
-    {
-        for (uint8_t x = 0; x < 8; x++)
-        {
-            if ((x + y) % 2)
-            {
-                gfx_FillRectangle(OF_X + x * TILE_W, OF_Y + y * TILE_H, TILE_W, TILE_H);
-            }
-            if (BOARD(x, y).type != NONE)
-            {
-                draw_piece(BOARD(x, y), x, y);
-            }
-            if (in_check && BOARD(x, y).type == KING && BOARD(x, y).color == turn)
-            {
-                draw_check(x, y);
-            }
-            if (potential_moves[POS_XY(x, y)])
-            {
-                draw_potential(circle_size, (x + y) % 2, x, y);
-            }
-        }
-    }
-
-    // Cursor
-    if (cursor.y < 8)
-    {
-        gfx_SetColor(4); // Blue
-        gfx_Rectangle(OF_X + cursor.x * TILE_W, OF_Y + cursor.y * TILE_H, TILE_W, TILE_H);
-        gfx_Rectangle(OF_X + cursor.x * TILE_W + 1, OF_Y + cursor.y * TILE_H + 1, TILE_W - 2, TILE_H - 2);
-    }
-
-    // Selector
-    if (is_selected)
-    {
-        gfx_SetColor(3); // Red
-        gfx_Rectangle(OF_X + selected.x * TILE_W, OF_Y + selected.y * TILE_H, TILE_W, TILE_H);
-        gfx_Rectangle(OF_X + selected.x * TILE_W + 1, OF_Y + selected.y * TILE_H + 1, TILE_W - 2, TILE_H - 2);
-    }
-
-    if (promotion_menu_of < 8)
-    {
-        for (uint8_t i = 0; i < 4; i++)
-        {
-            draw_piece((piece_t){i + 2, turn}, i + promotion_menu_of, PROMOTION);
-        }
-
-        if (cursor.y == PROMOTION)
-        {
-            // dbg_printf("item: %d\n", promotion_menu_item);
-            gfx_SetColor(4); // Blue
-            gfx_Rectangle(OF_X + (promotion_menu_of + promotion_menu_item) * TILE_W, OF_Y + (1-turn) * 9 * TILE_H - TILE_H, TILE_W, TILE_H);
-            gfx_Rectangle(OF_X + (promotion_menu_of + promotion_menu_item) * TILE_W + 1, OF_Y + (1-turn) * 9 * TILE_H - TILE_H + 1, TILE_W - 2, TILE_H - 2);
-        }
-    }
-}
-
 void check_end_game()
 {
     pos_t piece_moves_temp[24];
@@ -504,7 +420,6 @@ void check_end_game()
                 {
                     if (is_move_valid(x, y, piece_moves_temp[i]))
                     {
-                        // dbg_printf("%d (%d, %d): %d, %d\n", piece.type, x, y, piec_moves_temp[i].x, piec_moves_temp[i].y);
                         game_state = RUNNING;
                         return;
                     }
@@ -523,8 +438,6 @@ void check_end_game()
         game_state = DRAW;
     }
 }
-
-bool played_animation = false;
 
 void end_turn()
 {
@@ -584,7 +497,7 @@ void select()
     }
     else
     {
-        redraw = true;  // Do set redraw if played to not cancel played_animation, will be set later anyway
+        redraw = true;  // Set redraw if played to not cancel played_animation, will be set later anyway
     }
     unselect();
 }
@@ -694,8 +607,7 @@ void calc_potential_moves()
     //     return;
     // }
 
-    for (uint8_t i = 0; i < 8 * 8; i++)
-        potential_moves[i] = false;
+    memset(potential_moves, 0, sizeof(potential_moves));
 
     if (piece_moves_count == 0)
     {
@@ -753,16 +665,9 @@ void step_played_animation()
     redraw = true;
 }
 
-void step_game()
+void handle_events()
 {
-    if (game_state != RUNNING && !played_animation)
-    {
-        set_screen(SCREEN_END);
-        return;
-    }
-
     input_event_t event;
-    pos_t old_s = selected;
 
     while (get_event(&event))
     {
@@ -782,7 +687,7 @@ void step_game()
             break;
         // /TEMP
         case kb_KeyClear:
-            running = false;
+            open_main_menu();
             break;
         case kb_KeyEnter:
             select();
@@ -803,10 +708,23 @@ void step_game()
             break;
         }
     }
+}
+
+void step_game()
+{
+    if (game_state != RUNNING && !played_animation)
+    {
+        set_screen(SCREEN_END);
+        return;
+    }
+
+    pos_t old_s = selected;
+
+    handle_events();
 
     if (played_animation)
     {
-        if (!redraw)
+        if (!redraw)  // If the played didn't do any other action
         {
             step_played_animation();
             return;
@@ -820,14 +738,11 @@ void step_game()
         && (cursor.x != old_s.x || cursor.y != old_s.y))
     {
         calc_potential_moves();
-        circle_size = ticks % 2;
+        circle_size = 0;
     }
     else if (circle_size < 3)
     {
-        // circle_size+=2;
         circle_size++;
-        // if (circle_size > 3)
-        //     circle_size = 3;
 
         redraw = true;
     }
@@ -836,7 +751,7 @@ void step_game()
         && selected_piece.type == PAWN
         && (cursor.y == PROMOTION
             || ((cursor.y == 0 || cursor.y == 7)
-                && potential_moves[POS(cursor)])))  // The cursor is on a promotion circle or in the promotion menu
+                && potential_moves[POS(cursor)])))  // The cursor is on a promotion potential move or in the promotion menu
     {
         if (cursor.x < 2)
             promotion_menu_of = 0;
@@ -854,8 +769,61 @@ void step_game()
 
 void draw_game()
 {
-    // gfx_SetPalette(global_palette, sizeof_global_palette, 0);
-    // gfx_SetTransparentColor(0);
+    gfx_FillScreen(1); // White
 
-    draw_board();
+    gfx_SetColor(2); // Grey
+
+    for (uint8_t y = 0; y < 8; y++)
+    {
+        for (uint8_t x = 0; x < 8; x++)
+        {
+            if ((x + y) % 2)
+            {
+                gfx_FillRectangle(OF_X + x * TILE_W, OF_Y + y * TILE_H, TILE_W, TILE_H);
+            }
+            if (BOARD(x, y).type != NONE)
+            {
+                draw_piece(BOARD(x, y), x, y);
+            }
+            if (in_check && BOARD(x, y).type == KING && BOARD(x, y).color == turn)
+            {
+                draw_check(x, y);
+            }
+            if (potential_moves[POS_XY(x, y)])
+            {
+                draw_potential(circle_size, (x + y) % 2, x, y);
+            }
+        }
+    }
+
+    // Cursor
+    if (cursor.y < 8)
+    {
+        gfx_SetColor(4); // Blue
+        gfx_Rectangle(OF_X + cursor.x * TILE_W, OF_Y + cursor.y * TILE_H, TILE_W, TILE_H);
+        gfx_Rectangle(OF_X + cursor.x * TILE_W + 1, OF_Y + cursor.y * TILE_H + 1, TILE_W - 2, TILE_H - 2);
+    }
+
+    // Selector
+    if (is_selected)
+    {
+        gfx_SetColor(3); // Red
+        gfx_Rectangle(OF_X + selected.x * TILE_W, OF_Y + selected.y * TILE_H, TILE_W, TILE_H);
+        gfx_Rectangle(OF_X + selected.x * TILE_W + 1, OF_Y + selected.y * TILE_H + 1, TILE_W - 2, TILE_H - 2);
+    }
+
+    if (promotion_menu_of < 8)
+    {
+        for (uint8_t i = 0; i < 4; i++)
+        {
+            draw_piece((piece_t){i + 2, turn}, i + promotion_menu_of, PROMOTION);
+        }
+
+        if (cursor.y == PROMOTION)
+        {
+            gfx_SetColor(4); // Blue
+            gfx_Rectangle(OF_X + (promotion_menu_of + promotion_menu_item) * TILE_W, OF_Y + (1-turn) * 9 * TILE_H - TILE_H, TILE_W, TILE_H);
+            gfx_Rectangle(OF_X + (promotion_menu_of + promotion_menu_item) * TILE_W + 1, OF_Y + (1-turn) * 9 * TILE_H - TILE_H + 1, TILE_W - 2, TILE_H - 2);
+        }
+    }
 }

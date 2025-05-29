@@ -20,6 +20,7 @@ void draw_debug();
 #endif  // DEBUGGING
 
 // end.c
+void begin_end();
 void step_end();
 void draw_end();
 

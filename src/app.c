@@ -15,11 +15,6 @@ app_screen_t current_screen;
 void screen_begin() {
     switch (current_screen)
     {
-#if DEBUGGING
-    case SCREEN_DEBUG:
-        // No begin function
-        break;
-#endif  // DEBUGGING
     case SCREEN_MENU:
         begin_menu();
         break;
@@ -28,9 +23,9 @@ void screen_begin() {
         begin_game();
         break;
     
-    // case SCREEN_END:
-    //     begin_end();
-    //     break;
+    case SCREEN_END:
+        begin_end();
+        break;
 
     default:
         break;
@@ -46,23 +41,12 @@ void set_screen(app_screen_t screen)
     screen_begin();
 }
 
-// Main
-
-bool running;
 
 void main_menu_callback(short item);
 
-void begin()
+void open_main_menu()
 {
     static const char *items[] = {"Play", "Quit"};
-
-    running = true;
-
-#if DEBUGGING
-    set_screen(SCREEN_DEBUG);
-
-    return;
-#endif  // DEBUGGING
 
     open_menu("Chess", items, sizeof(items) / sizeof(char *), main_menu_callback);
 }
@@ -82,6 +66,23 @@ void main_menu_callback(short item)
     default:
         break;
     }
+}
+
+// Main
+
+bool running;
+
+void begin()
+{
+    running = true;
+
+#if DEBUGGING
+    set_screen(SCREEN_DEBUG);
+
+    return;
+#endif  // DEBUGGING
+
+    open_main_menu();
 }
 
 void end()

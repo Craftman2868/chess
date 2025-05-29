@@ -17,4 +17,6 @@ extern bool running;
 
 void set_screen(app_screen_t screen);
 
+void open_main_menu();
+
 #endif /* APP_H */

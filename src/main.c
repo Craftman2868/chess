@@ -1,16 +1,13 @@
-#include <stdlib.h>
+#include <stdbool.h>
 #include <sys/timers.h>
 #include <graphx.h>
-#include <stdio.h>
 
 #include "main.h"
 
-// bool partial_redraw;
+
 bool redraw;
 unsigned int ticks = 0;
 
-
-/* Main function, called first */
 int main(void)
 {
     redraw = true;
@@ -24,8 +21,6 @@ int main(void)
     {
         delay(TICK_TIME);
         ticks++;
-        // if (partial_redraw)
-        //     gfx_BlitScreen();
         if (!redraw)
             continue;
         redraw = false;
@@ -36,6 +31,5 @@ int main(void)
     gfx_End();
     end();
 
-    /* Return 0 for success */
     return 0;
 }

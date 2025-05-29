@@ -1,16 +1,18 @@
 #include "input.h"
 
+#include <stdint.h>
+#include <stdbool.h>
 #include <keypadc.h>
 #include "main.h"
 
+
 #define KEY_REPEAT_INTERVAL 4  // ticks
-#define EVENT_QUEUE_LENGTH 32
+#define EVENT_QUEUE_LENGTH 32  // between 1 and 255
 
 uint8_t last_kb[8];
 bool last_on = false;
 input_key_t key_repeat_last;
 unsigned int key_repeat_ticks;
-
 
 struct
 {
@@ -54,15 +56,6 @@ void update_inputs()
 
     kb_Scan();
 
-    // if (kb_Data[6] & kb_Enter)
-    // {
-    //     event.type = EV_DEBUG;
-    //     event.msg = "Enter";
-    //     queue_add_event(&event_queue, event);
-    // }
-
-    // return;
-
     for (int i = 1; i < 8; i++)
     {
         kb = kb_Data[i];
@@ -89,7 +82,7 @@ void update_inputs()
     if (last_on != kb_On)
     {
         event.type = kb_On ? EV_KEY_DOWN : EV_KEY_UP;
-        event.key = 0;
+        event.key = kb_KeyOn;
 
         queue_add_event(&event_queue, event);
     }

@@ -39,16 +39,28 @@ void draw_end()
     gfx_SetTextScale(2, 2);
 
     gfx_SetColor(1);  // White
-    gfx_FillRectangle(65, 95, 150, 40);
 
-    if (game_state == CHECKMATE)
+    switch (game_state)
     {
+    case CHECKMATE:
+        gfx_FillRectangle(65, 95, 150, 40);
         gfx_PrintStringXY("CHECKMATE", 70, 100);
         gfx_SetTextScale(1, 1);
         gfx_PrintStringXY(winner == WHITE ? "WHITE won" : "BLACK won", 110, 120);
-    }
-    else
-    {
-        gfx_PrintStringXY("DRAW", 110, 110);
+        break;
+    case DRAW_STALEMATE:
+        gfx_FillRectangle(96, 95, 84, 40);
+        gfx_PrintStringXY("DRAW", 107, 100);
+        gfx_SetTextScale(1, 1);
+        gfx_PrintStringXY("Stalemate", 105, 120);
+        break;
+    case DRAW_MATERIAL:
+        gfx_FillRectangle(60, 95, 157, 40);
+        gfx_PrintStringXY("DRAW", 107, 100);
+        gfx_SetTextScale(1, 1);
+        gfx_PrintStringXY("Insufficient material", 65, 120);
+        break;
+    default:
+        break;
     }
 }

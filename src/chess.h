@@ -34,7 +34,8 @@ struct {
 enum {
     RUNNING,
     CHECKMATE,
-    DRAW,
+    DRAW_STALEMATE,
+    DRAW_MATERIAL,
 } typedef game_state_t;
 
 extern game_state_t game_state;

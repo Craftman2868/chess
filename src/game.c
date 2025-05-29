@@ -399,8 +399,46 @@ void draw_check(uint8_t x, uint8_t y)
     gfx_TransparentSprite(sprite, OF_X + x * TILE_W, OF_Y + y * TILE_H);
 }
 
+bool check_material()
+{
+    uint8_t knight_count[2] = {0, 0};
+    uint8_t bishop_count[2] = {0, 0};
+
+    for (uint8_t y = 0; y < 8; y++)
+    {
+        for (uint8_t x = 0; x < 8; x++)
+        {
+            piece_t piece = BOARD(x, y);
+
+            if (piece.type == PAWN || piece.type == ROOK || piece.type == QUEEN)
+                return true;
+
+            if (piece.type == KNIGHT)
+            {
+                knight_count[piece.color]++;
+                if (knight_count[piece.color] > 1)
+                    return true;  // More than one knight
+            }
+            else if (piece.type == BISHOP)
+            {
+                bishop_count[piece.color]++;
+                if (bishop_count[piece.color] > 1)
+                    return true;  // More than one bishop
+            }
+        }
+    }
+
+    return false;
+}
+
 void check_end_game()
 {
+    if (!check_material())
+    {
+        game_state = DRAW_MATERIAL;
+        return;
+    }
+
     pos_t piece_moves_temp[24];
     uint8_t piece_moves_count_temp;
 
@@ -435,7 +473,7 @@ void check_end_game()
     }
     else
     {
-        game_state = DRAW;
+        game_state = DRAW_STALEMATE;
     }
 }
 
@@ -504,10 +542,13 @@ void select()
 
 void cursor_up()
 {
-    if (cursor.y == PROMOTION && turn == BLACK)
+    if (cursor.y == PROMOTION)
     {
-        cursor.y = 7;
-        redraw = true;
+        if (turn == BLACK)
+        {
+            cursor.y = 7;
+            redraw = true;
+        }
         return;
     }
 

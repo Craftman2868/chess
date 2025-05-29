@@ -769,46 +769,35 @@ void step_game()
         if (event.type != EV_KEY_DOWN && event.type != EV_KEY_REPEAT)
             continue;
 
-        switch (event.key.group)
+        switch (event.key)
         {
         // TEMP
-        case 1:
-            if (event.key.key == kb_Mode)
-            {
-                turn = !turn;
-                redraw = true;
-            }
-            else if (event.key.key == kb_Del)
-            {
-                cursor_piece.type = NONE;
-                redraw = true;
-            }
+        case kb_KeyMode:
+            turn = !turn;
+            redraw = true;
+            break;
+        case kb_KeyDel:
+            cursor_piece.type = NONE;
+            redraw = true;
             break;
         // /TEMP
-        case 6:
-            if (event.key.key == kb_Clear)
-                running = false;
-            else if (event.key.key == kb_Enter)
-                select();
+        case kb_KeyClear:
+            running = false;
             break;
-        case 7:
-            switch (event.key.key)
-            {
-            case kb_Up:
-                cursor_up();
-                break;
-            case kb_Down:
-                cursor_down();
-                break;
-            case kb_Left:
-                cursor_left();
-                break;
-            case kb_Right:
-                cursor_right();
-                break;
-            default:
-                break;
-            }
+        case kb_KeyEnter:
+            select();
+            break;
+        case kb_KeyUp:
+            cursor_up();
+            break;
+        case kb_KeyDown:
+            cursor_down();
+            break;
+        case kb_KeyLeft:
+            cursor_left();
+            break;
+        case kb_KeyRight:
+            cursor_right();
             break;
         default:
             break;

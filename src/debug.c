@@ -1,7 +1,10 @@
+#include "main.h"
+
+#if DEBUGGING
+
 #include "screens.h"
 
 #include <graphx.h>
-#include "main.h"
 #include "input.h"
 
 #define DEBUG_DISPLAY_EVENT_COUNT 8
@@ -61,11 +64,11 @@ void draw_debug()
         {
             PRINT_STR("REPEAT", 20);
         }
-        PRINT_UINT(EV.key.group, 2, 130);
-        PRINT_UINT(EV.key.key, 2, 200);
+        PRINT_UINT(EV.key, 2, 130);
 #undef EV
 #undef PRINT_STR
 #undef PRINT_UINT
     }
 }
 
+#endif  // DEBUGGING

@@ -88,29 +88,22 @@ void handle_event(input_event_t event) {
         return;
     }
 
-    switch (event.key.group)
+    switch (event.key)
     {
-    case 6:
-        if (event.key.key == kb_Clear)
-            running = false;
-        else if (event.key.key == kb_Enter)
-            menu_select();
+    case kb_KeyClear:
+        running = false;
         break;
-    case 7:
-        switch (event.key.key)
-        {
-        case kb_Up:
-            menu_up();
-            break;
-        case kb_Down:
-            menu_down();
-            break;
-        case kb_Right:
-            menu_select();
-            break;
-        default:
-            break;
-        }
+    case kb_KeyEnter:
+        menu_select();
+        break;
+    case kb_KeyUp:
+        menu_up();
+        break;
+    case kb_KeyDown:
+        menu_down();
+        break;
+    case kb_KeyRight:
+        menu_select();
         break;
     default:
         break;

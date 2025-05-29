@@ -50,16 +50,16 @@ void update_inputs()
 {
     uint8_t kb, diff;
     input_event_t event;
-    input_key_t key_repeat = {0, 0};
+    input_key_t key_repeat = 0;
 
     kb_Scan();
 
-    if (kb_Data[6] & kb_Enter)
-    {
-        event.type = EV_DEBUG;
-        event.msg = "Enter";
-        queue_add_event(&event_queue, event);
-    }
+    // if (kb_Data[6] & kb_Enter)
+    // {
+    //     event.type = EV_DEBUG;
+    //     event.msg = "Enter";
+    //     queue_add_event(&event_queue, event);
+    // }
 
     // return;
 
@@ -73,15 +73,13 @@ void update_inputs()
             if (diff & (1 << j))
             {
                 event.type = (kb & (1 << j)) ? EV_KEY_DOWN : EV_KEY_UP;
-                event.key.group = i;
-                event.key.key = (1 << j);
+                event.key = i << 8 | (1 << j);
 
                 queue_add_event(&event_queue, event);
             }
             else if (kb & (1 << j))
             {
-                key_repeat.group = i;
-                key_repeat.key = (1 << j);
+                key_repeat = i << 8 | (1 << j);
             }
         }
 
@@ -91,18 +89,17 @@ void update_inputs()
     if (last_on != kb_On)
     {
         event.type = kb_On ? EV_KEY_DOWN : EV_KEY_UP;
-        event.key.group = 0;
-        event.key.key = 0;
+        event.key = 0;
 
         queue_add_event(&event_queue, event);
     }
 
-    if (key_repeat.group == 0 && key_repeat.key == 0)
+    if (key_repeat == 0)
     {
         return;
     }
 
-    if (key_repeat.group == key_repeat_last.group && key_repeat.key == key_repeat_last.key)
+    if (key_repeat == key_repeat_last)
     {
         key_repeat_ticks++;
         if (key_repeat_ticks >= KEY_REPEAT_INTERVAL)

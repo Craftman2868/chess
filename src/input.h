@@ -3,6 +3,9 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <keypadc.h>
+
+#include "main.h"
 
 enum
 {
@@ -10,14 +13,14 @@ enum
     EV_KEY_DOWN,
     EV_KEY_UP,
     EV_KEY_REPEAT,
+#if DEBUGGING
     EV_DEBUG,
+#endif  // DEBUGGING
 } typedef input_event_type_t;
 
-// special value: 0, 0 = Key On
-struct
-{
-    uint8_t group, key;
-} typedef input_key_t;
+typedef kb_lkey_t input_key_t;
+
+#define kb_KeyOn ((input_key_t) 1);
 
 struct
 {
@@ -25,7 +28,9 @@ struct
     union
     {
         input_key_t key;  // EV_KEY_...
+#if DEBUGGING
         char *msg;  // EV_DEBUG
+#endif  // DEBUGGING
     };
 } typedef input_event_t;
 

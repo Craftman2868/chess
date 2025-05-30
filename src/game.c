@@ -21,7 +21,8 @@ game_state_t game_state;
 piece_t board[8 * 8];
 color_t turn;
 bool in_check;
-bool king_moved[2];  // TODO? check if rook moved, too
+bool king_moved[2];
+bool rook_moved[2][2];  // rook_moved[color][rook]  // rook 0 = left, rook 1 = right
 pos_t cursor;
 pos_t selected;
 uint8_t circle_size = 0;
@@ -232,13 +233,15 @@ void get_king_moves(piece_t piece, uint8_t x, uint8_t y)
 
     if (!king_moved[piece.color])
     {
-        if (BOARD(7, y).type == ROOK
-            && BOARD(7, y).color == piece.color
+        if (!rook_moved[piece.color][1]
+            // && BOARD(7, y).type == ROOK
+            // && BOARD(7, y).color == piece.color
             && BOARD(5, y).type == NONE
             && BOARD(6, y).type == NONE)
             add_move(6, y);  // Short castling
-        if (BOARD(0, y).type == ROOK
-            && BOARD(0, y).color == piece.color
+        if (!rook_moved[piece.color][0]
+            // && BOARD(0, y).type == ROOK
+            // && BOARD(0, y).color == piece.color
             && BOARD(3, y).type == NONE
             && BOARD(2, y).type == NONE
             && BOARD(1, y).type == NONE)
@@ -493,6 +496,13 @@ void end_turn()
     if (cursor_piece.type == KING)
     {
         king_moved[turn] = true;
+    }
+    if (cursor_piece.type == ROOK && selected.y == 7 * turn)
+    {
+        if (selected.x == 0)
+            rook_moved[turn][0] = true;  // Left rook
+        else if (selected.x == 7)
+            rook_moved[turn][1] = true;  // Right rook
     }
     turn = !turn;
     in_check = is_in_check(turn);

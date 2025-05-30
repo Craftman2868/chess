@@ -27,6 +27,7 @@ pos_t selected;
 uint8_t circle_size = 0;
 uint8_t promotion_menu_of = 8;  // 8 means no promotion menu
 uint8_t promotion_menu_item;
+uint8_t en_passant_x = 9;  // 9 means no en passant (WARNING: do not use 8 as the unused value)
 
 #define PROMOTION 255  // Any constant number between 8 and 255
 
@@ -119,31 +120,48 @@ void get_pawn_moves(piece_t piece, uint8_t x, uint8_t y)
     {
         add_move_if_piece(x - 1, y - 1, WHITE);
         add_move_if_piece(x + 1, y - 1, WHITE);
-    }
-    else
-    {
-        add_move_if_piece(x - 1, y + 1, BLACK);
-        add_move_if_piece(x + 1, y + 1, BLACK);
-    }
 
-    // TODO: en passant
-    
-    if (piece.color == WHITE)
-    {
         if (check_in(x, y - 1) && BOARD(x, y - 1).type == NONE)
         {
             add_move(x, y - 1);
             if (y == 6)
                 add_move_if_no_piece(x, y - 2);
         }
+
+        if (y == 3)
+        {
+            if (x - 1 == en_passant_x)
+            {
+                add_move(x - 1, y - 1);  // En passant left
+            }
+            else if (x + 1 == en_passant_x)
+            {
+                add_move(x + 1, y - 1);  // En passant right
+            }
+        }
     }
     else
     {
+        add_move_if_piece(x - 1, y + 1, BLACK);
+        add_move_if_piece(x + 1, y + 1, BLACK);
+
         if (check_in(x, y + 1) && BOARD(x, y + 1).type == NONE)
         {
             add_move(x, y + 1);
             if (y == 1)
                 add_move_if_no_piece(x, y + 2);
+        }
+
+        if (y == 4)
+        {
+            if (x - 1 == en_passant_x)
+            {
+                add_move(x - 1, y + 1);  // En passant left
+            }
+            else if (x + 1 == en_passant_x)
+            {
+                add_move(x + 1, y + 1);  // En passant right
+            }
         }
     }
 }
@@ -480,6 +498,22 @@ void end_turn()
     in_check = is_in_check(turn);
     played_animation = true;
     check_end_game();
+
+    if (cursor_piece.type == PAWN)
+    {
+        if (selected.y - cursor.y == 2 || cursor.y - selected.y == 2)
+        {
+            en_passant_x = selected.x;
+            return;
+        }
+
+        if (cursor.x != selected.x && cursor.x == en_passant_x
+            && ((selected_piece.color == WHITE && cursor.y == 2)
+                || (selected_piece.color == BLACK && cursor.y == 5)))
+            BOARD(cursor.x, selected.y).type = NONE;
+    }
+
+    en_passant_x = 9;
 }
 
 // Called when enter is pressed

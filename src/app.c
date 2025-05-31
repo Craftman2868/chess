@@ -5,7 +5,10 @@
 #include <keypadc.h>
 #include "screens.h"
 #include "input.h"
+#include "chess.h"
 #include "menu.h"
+#include "save.h"
+#include "save_menu.h"
 
 // App
 
@@ -44,22 +47,52 @@ void set_screen(app_screen_t screen)
 
 void main_menu_callback(short item);
 
+short main_menu_item_count;
+
 void open_main_menu()
 {
-    static const char *items[] = {"Play", "Quit"};
+    static const char *items[3];
 
-    open_menu("Chess", items, sizeof(items) / sizeof(char *), main_menu_callback);
+    if (get_new_id() != -1)
+    {
+        items[0] = "New game";
+        items[1] = "Manage saves";
+        items[2] = "Quit";
+        main_menu_item_count = 3;
+    }
+    else
+    {
+        items[0] = "Manage saves";
+        items[1] = "Quit";
+        main_menu_item_count = 2;
+    }
+
+    open_menu("Chess", items, main_menu_item_count, main_menu_callback);
 }
 
 void main_menu_callback(short item)
 {
+    if (item == -1)  // Back
+    {
+        running = false;
+        return;
+    }
+
+    if (main_menu_item_count == 2)
+        item++;
+
     switch (item)
     {
-    case 0:  // Play
-        set_screen(SCREEN_GAME);
+    case 0:  // New game
+        // set_screen(SCREEN_GAME);
+        run_new_game();
+        break;
+    
+    case 1:  // Manage saves
+        open_save_menu();
         break;
 
-    case 1:  // Quit
+    case 2:  // Quit
         running = false;
         break;
 

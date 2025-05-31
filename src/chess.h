@@ -2,6 +2,7 @@
 #define CHESS_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 enum {
     NONE,
@@ -39,5 +40,8 @@ enum {
 } typedef game_state_t;
 
 extern game_state_t game_state;
+
+bool run_new_game();
+bool run_save(int8_t id);
 
 #endif /* CHESS_H */

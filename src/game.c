@@ -7,6 +7,7 @@
 #include <graphx.h>
 #include "app.h"
 #include "input.h"
+#include "save.h"
 
 #include "gfx/gfx.h"
 
@@ -16,6 +17,8 @@
 #define TILE_H 22  // px
 #define OF_X 50  // px  // Offset X
 #define OF_Y 30  // px  // Offset Y
+
+int8_t game_id = -1;
 
 game_state_t game_state;
 piece_t board[8 * 8];
@@ -99,20 +102,30 @@ void init_board()
 
 void init_game()
 {
-    init_board();
-
     game_state = RUNNING;
 
     cursor.x = 4;
-    cursor.y = 7;
+    cursor.y = 7 * turn;
 
     unselect();
+
+    memset(potential_moves, 0, sizeof(potential_moves));
+}
+
+void init_new_game()
+{
+    init_board();
 
     turn = WHITE;
     in_check = false;
     king_moved[BLACK] = false;
     king_moved[WHITE] = false;
-    memset(potential_moves, 0, sizeof(potential_moves));
+    rook_moved[BLACK][0] = false;
+    rook_moved[BLACK][1] = false;
+    rook_moved[WHITE][0] = false;
+    rook_moved[WHITE][1] = false;
+
+    init_game();
 }
 
 void get_pawn_moves(piece_t piece, uint8_t x, uint8_t y)
@@ -715,12 +728,63 @@ void calc_potential_moves()
     }
 }
 
+void save_game()
+{
+    // assert game_id >= 0
+
+    game_data_t data = dump_game(board, turn, king_moved, rook_moved, en_passant_x);
+
+    save_data(&data, game_id);
+}
+
+void quit_game()
+{
+    if (game_state == RUNNING)
+        save_game();
+    else
+        delete_save(game_id);
+
+    open_main_menu();
+}
+
+// chess.h functions
+
+bool run_new_game()
+{
+    game_id = get_new_id();
+
+    if (game_id < 0)
+        return false;
+
+    init_new_game();
+
+    set_screen(SCREEN_GAME);
+
+    return true;
+}
+
+bool run_save(int8_t id)
+{
+    game_data_t data;
+
+    game_id = id;
+
+    if (!load_data(&data, id))
+        return false;
+    
+    load_game(&data, board, &turn, king_moved, rook_moved, &en_passant_x);
+
+    init_game();
+
+    set_screen(SCREEN_GAME);
+
+    return true;
+}
+
 // screens.h functions
 
 void begin_game()
 {
-    init_game();
-
     gfx_SetPalette(global_palette, sizeof_global_palette, 0);
     gfx_SetTransparentColor(0);
 }
@@ -765,7 +829,7 @@ void handle_events()
             break;
         // /TEMP
         case kb_KeyClear:
-            open_main_menu();
+            quit_game();
             break;
         case kb_KeyEnter:
             select();
@@ -792,6 +856,7 @@ void step_game()
 {
     if (game_state != RUNNING && !played_animation)
     {
+        delete_save(game_id);
         set_screen(SCREEN_END);
         return;
     }

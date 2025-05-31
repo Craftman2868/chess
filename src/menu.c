@@ -16,7 +16,7 @@
 #define MENU_MARGIN_TITLE_LEFT 64  // px
 #define TEXT_MARGIN 5  // px
 #define DISPLAY_ITEM_COUNT 4  // Maximun number of menu item that can be displayed
-#define ITEM_WIDTH 100  // px
+#define ITEM_WIDTH 200  // px
 
 #define DEFAULT_TEXT_HEIGHT 8  // px  (can't be changed)
 #define TEXT_HEIGHT (DEFAULT_TEXT_HEIGHT * TEXT_SCALE)
@@ -30,21 +30,41 @@ static struct
     short item_count;
     short current_item;
     short offset;
-    void (*callback)(short);
+    union
+    {
+        void (*callback)(short);
+        void (*advanced_callback)(short, input_key_t);
+    };
+    bool advanced;
 } menu;
 
-void open_menu(const char *title, const char *items[], short item_count, void (*callback)(short))
+void init_menu(const char *title, const char *items[], short item_count)
 {
     menu.title = title;
     menu.items = items;
     menu.item_count = item_count;
     menu.current_item = 0;
     menu.offset = 0;
+}
+
+void open_menu(const char *title, const char *items[], short item_count, void (*callback)(short))
+{
+    init_menu(title, items, item_count);
+
     menu.callback = callback;
+    menu.advanced = false;
 
     set_screen(SCREEN_MENU);
+}
 
-    // redraw = true;  // set_screen already sets redraw
+void open_menu_advanced(const char *title, const char *items[], short item_count, void (*callback)(short, input_key_t))
+{
+    init_menu(title, items, item_count);
+
+    menu.advanced_callback = callback;
+    menu.advanced = true;
+
+    set_screen(SCREEN_MENU);
 }
 
 // Because the native '%' behave weirdly with negative numbers
@@ -54,7 +74,8 @@ inline short mod(short a, short b)
     return r < 0 ? r + b : r;
 }
 
-void menu_up() {
+void menu_up()
+{
     menu.current_item = mod(menu.current_item - 1, menu.item_count);
     if (menu.current_item < menu.offset)
         menu.offset--;
@@ -64,7 +85,8 @@ void menu_up() {
     redraw = true;
 }
 
-void menu_down() {
+void menu_down()
+{
     menu.current_item = mod(menu.current_item + 1, menu.item_count);
     if (menu.current_item >= menu.offset + DISPLAY_ITEM_COUNT)
         menu.offset++;
@@ -74,14 +96,44 @@ void menu_down() {
     redraw = true;
 }
 
-void menu_select() {
+void menu_select()
+{
     if (menu.callback != NULL)
-    {
         menu.callback(menu.current_item);
+}
+
+void menu_back()
+{
+    if (menu.callback != NULL)
+        menu.callback(-1);
+}
+
+void handle_advanced(input_key_t key)
+{
+    if (menu.advanced)
+    {
+        if (menu.advanced_callback != NULL)
+            menu.advanced_callback(menu.current_item, key);
+        return;
+    }
+
+    switch (key)
+    {
+    case kb_KeyLeft:
+    case kb_KeyClear:
+        menu_back();
+        break;
+    case kb_KeyRight:
+    case kb_KeyEnter:
+        menu_select();
+        break;
+    default:
+        break;
     }
 }
 
-void handle_event(input_event_t event) {
+void handle_event(input_event_t event)
+{
     if (event.type != EV_KEY_DOWN && event.type != EV_KEY_REPEAT)
     {
         return;
@@ -89,22 +141,14 @@ void handle_event(input_event_t event) {
 
     switch (event.key)
     {
-    case kb_KeyClear:
-        running = false;
-        break;
-    case kb_KeyEnter:
-        menu_select();
-        break;
     case kb_KeyUp:
         menu_up();
         break;
     case kb_KeyDown:
         menu_down();
         break;
-    case kb_KeyRight:
-        menu_select();
-        break;
     default:
+        handle_advanced(event.key);
         break;
     }
 }

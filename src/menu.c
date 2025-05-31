@@ -10,12 +10,12 @@
 
 #define TEXT_SCALE 2  // times
 
+#define DISPLAY_ITEM_COUNT 6  // Maximun number of menu item that can be displayed
 #define MENU_MARGIN_TOP 30  // px
 #define MENU_MARGIN_LEFT 42  // px
-#define MENU_MARGIN_TITLE 24  // px
+#define MENU_MARGIN_TITLE 20  // px
 #define MENU_MARGIN_TITLE_LEFT 64  // px
 #define TEXT_MARGIN 5  // px
-#define DISPLAY_ITEM_COUNT 4  // Maximun number of menu item that can be displayed
 #define ITEM_WIDTH 200  // px
 
 #define DEFAULT_TEXT_HEIGHT 8  // px  (can't be changed)

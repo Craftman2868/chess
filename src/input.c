@@ -6,7 +6,8 @@
 #include "main.h"
 
 
-#define KEY_REPEAT_INTERVAL 6  // ticks
+#define KEY_REPEAT_INTERVAL 10  // ticks
+#define INITIAL_KEY_REPEAT_TIME 10  // ticks
 #define EVENT_QUEUE_LENGTH 32  // between 1 and 255
 
 uint8_t last_kb[8];
@@ -89,19 +90,20 @@ void update_inputs()
 
     if (key_repeat == 0)
     {
+        key_repeat_last = 0;
         return;
     }
 
     if (key_repeat == key_repeat_last)
     {
         key_repeat_ticks++;
-        if (key_repeat_ticks >= KEY_REPEAT_INTERVAL)
+        if (key_repeat_ticks >= INITIAL_KEY_REPEAT_TIME + KEY_REPEAT_INTERVAL)
         {
             event.type = EV_KEY_REPEAT;
             event.key = key_repeat;
 
             queue_add_event(&event_queue, event);
-            key_repeat_ticks = 0;
+            key_repeat_ticks = INITIAL_KEY_REPEAT_TIME;
         }
     }
     else

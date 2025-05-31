@@ -833,6 +833,8 @@ void handle_events()
             quit_game();
             break;
         case kb_KeyEnter:
+            if (event.type == EV_KEY_REPEAT)
+                break;  // Ignore repeat events
             select();
             break;
         case kb_KeyUp:

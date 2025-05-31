@@ -1,5 +1,5 @@
 #include "screens.h"
-#include "chess.h"
+#include "game.h"
 
 #include <stdint.h>
 #include <string.h>  // memcpy, memset
@@ -8,6 +8,7 @@
 #include "app.h"
 #include "input.h"
 #include "save.h"
+#include "chess.h"
 
 #include "gfx/gfx.h"
 
@@ -747,7 +748,7 @@ void quit_game()
     open_main_menu();
 }
 
-// chess.h functions
+// game.h functions
 
 bool run_new_game()
 {

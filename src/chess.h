@@ -41,7 +41,4 @@ enum {
 
 extern game_state_t game_state;
 
-bool run_new_game();
-bool run_save(int8_t id);
-
 #endif /* CHESS_H */

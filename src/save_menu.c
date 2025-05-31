@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "app.h"
-#include "chess.h"
+#include "game.h"
 #include "menu.h"
 #include "save.h"
 #include "input.h"

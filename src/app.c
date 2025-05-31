@@ -5,7 +5,7 @@
 #include <keypadc.h>
 #include "screens.h"
 #include "input.h"
-#include "chess.h"
+#include "game.h"
 #include "menu.h"
 #include "save.h"
 #include "save_menu.h"
@@ -84,7 +84,6 @@ void main_menu_callback(short item)
     switch (item)
     {
     case 0:  // New game
-        // set_screen(SCREEN_GAME);
         run_new_game();
         break;
     

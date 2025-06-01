@@ -10,7 +10,7 @@
 
 #define TEXT_SCALE 2  // times
 
-#define DISPLAY_ITEM_COUNT 6  // Maximun number of menu item that can be displayed
+#define DISPLAY_ITEM_COUNT 6  // Maximum number of menu item that can be displayed
 #define MENU_MARGIN_TOP 30  // px
 #define MENU_MARGIN_LEFT 42  // px
 #define MENU_MARGIN_TITLE 20  // px
@@ -72,6 +72,20 @@ inline short mod(short a, short b)
 {
     short r = a % b;
     return r < 0 ? r + b : r;
+}
+
+void menu_select_item(short item)
+{
+    if (item == menu.current_item)
+        return;
+
+    menu.current_item = mod(item, menu.item_count);
+    if (menu.current_item < menu.offset)
+        menu.offset = menu.current_item;
+    else if (menu.current_item >= menu.offset + DISPLAY_ITEM_COUNT)
+        menu.offset = menu.current_item - DISPLAY_ITEM_COUNT + 1;
+
+    redraw = true;
 }
 
 void menu_up()
@@ -150,6 +164,18 @@ void handle_event(input_event_t event)
     default:
         handle_advanced(event.key);
         break;
+    }
+}
+
+void menu_update()
+{
+    if (menu.advanced)
+    {
+        menu.advanced_callback(menu.current_item, 0);
+    }
+    else
+    {
+        menu.callback(-2);
     }
 }
 

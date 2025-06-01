@@ -4,6 +4,7 @@
 #include "app.h"
 #include "input.h"
 #include "chess.h"
+#include "menu.h"
 
 
 unsigned int end_ticks;
@@ -25,11 +26,12 @@ void step_end()
         if (event.key != kb_KeyClear && ticks - end_ticks < 20)
             continue;
 
-        open_main_menu();  // Go back to the main menu
+        set_screen(SCREEN_MENU);  // Get back to the last menu
+        menu_update();
     }
 }
 
-// Should only be called once
+// Should only be called once because redraw is never set by step_end()
 void draw_end()
 {
     gfx_BlitScreen();

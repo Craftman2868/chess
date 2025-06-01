@@ -9,6 +9,8 @@
 #include "input.h"
 #include "yesno.h"
 
+#include <debug.h>
+
 char item_names[MAX_SAVE_COUNT][16];
 int8_t item_ids[MAX_SAVE_COUNT];
 short item_count;
@@ -57,11 +59,41 @@ void open_save_menu()
 
 void delete_yesno_callback(yesno_t answer);
 
-int8_t id;
+int8_t id, selected_item;
 char yesno_title[] = "Delete save #?";
+
+void new_game()
+{
+    if (!run_new_game())
+    {
+        open_main_menu();
+        return;
+    }
+}
+
+void save_menu_update()
+{
+    short i = 0;
+
+    open_save_menu();
+
+    while (i < item_count && item_ids[i] != game_id)
+        i++;
+    
+    if (i == item_count)
+       i = item_count - 1;  // New game
+
+    menu_select_item(i);
+}
 
 void save_menu_callback(short i, input_key_t key)
 {
+    if (key == 0)
+    {  // Special event: menu_update()
+        save_menu_update();
+        return;
+    }
+
     id = item_ids[i];
 
     switch (key)
@@ -70,23 +102,23 @@ void save_menu_callback(short i, input_key_t key)
     case kb_KeyEnter:
         if (id == -1)
         {
-            if (!run_new_game())
-                open_main_menu();
+            new_game();
             return;
         }
 
         if (!run_save(id))
             open_main_menu();
         break;
-    
+
     case kb_KeyLeft:
     case kb_KeyClear:
         open_main_menu();
         break;
-    
+
     case kb_KeyDel:
         if (id == -1)
             break;
+        selected_item = i;
         yesno_title[12] = '0' + id;
         open_yesno(yesno_title, delete_yesno_callback);
         break;
@@ -101,4 +133,5 @@ void delete_yesno_callback(yesno_t answer)
         delete_save(id);
 
     open_save_menu();
+    menu_select_item(selected_item);
 }

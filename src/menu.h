@@ -6,4 +6,7 @@
 void open_menu(const char *title, const char *items[], short item_count, void (*callback)(short));
 void open_menu_advanced(const char *title, const char *items[], short item_count, void (*callback)(short, input_key_t));
 
+void menu_select_item(short item);
+void menu_update();
+
 #endif /* MENU_H */

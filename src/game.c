@@ -9,6 +9,7 @@
 #include "input.h"
 #include "save.h"
 #include "chess.h"
+#include "menu.h"
 
 #include "gfx/gfx.h"
 
@@ -54,17 +55,28 @@ uint8_t piece_moves_count;
 
 #define add_move(x, y) piece_moves[piece_moves_count++] = (pos_t) { x, y }  // do {piece_moves[piece_moves_count++] = (pos_t) { x, y }; dbg_printf("%d: %d, %d\n", __LINE__, x - 1, y - 1);} while (0)
 #define add_move_in(x, y) \
-    if (check_in(x, y)) \
-        add_move(x, y)
+    do { \
+        if (check_in(x, y)) \
+            add_move(x, y); \
+    } while (0)
+
 #define add_move_if_piece(x, y, color_) \
-    if (check_in(x, y) && (BOARD(x, y).type != NONE && BOARD(x, y).color != color_)) \
-        add_move(x, y)
+    do { \
+        if (check_in(x, y) && (BOARD(x, y).type != NONE && BOARD(x, y).color != color_)) \
+            add_move(x, y); \
+    } while (0)
+
 #define add_move_if_no_piece(x, y) \
-    if (check_in(x, y) && BOARD(x, y).type == NONE) \
-        add_move(x, y)
+    do { \
+        if (check_in(x, y) && BOARD(x, y).type == NONE) \
+            add_move(x, y); \
+    } while (0)
+
 #define add_move_if_possible(x, y, color_) \
-    if (check_in(x, y) && (BOARD(x, y).type == NONE || BOARD(x, y).color != color_)) \
-        add_move(x, y)
+    do { \
+        if (check_in(x, y) && (BOARD(x, y).type == NONE || BOARD(x, y).color != color_)) \
+            add_move(x, y); \
+    } while (0)
 
 bool potential_moves[8*8];
 bool played_animation = false;
@@ -131,52 +143,30 @@ void init_new_game()
 
 void get_pawn_moves(piece_t piece, uint8_t x, uint8_t y)
 {
-    if (piece.color == WHITE)
+    int8_t direction = piece.color == WHITE ? -1 : +1;
+
+    add_move_if_piece(x - 1, y + direction, piece.color);
+    add_move_if_piece(x + 1, y + direction, piece.color);
+
+    if (check_in(x, y + direction) && BOARD(x, y + direction).type == NONE)
     {
-        add_move_if_piece(x - 1, y - 1, WHITE);
-        add_move_if_piece(x + 1, y - 1, WHITE);
+        add_move(x, y + direction);
+        if (piece.color == WHITE && y == 6)
+            add_move_if_no_piece(x, y - 2);
+        else if (y == 1)
+            add_move_if_no_piece(x, y + 2);
 
-        if (check_in(x, y - 1) && BOARD(x, y - 1).type == NONE)
-        {
-            add_move(x, y - 1);
-            if (y == 6)
-                add_move_if_no_piece(x, y - 2);
-        }
-
-        if (y == 3)
-        {
-            if (x - 1 == en_passant_x)
-            {
-                add_move(x - 1, y - 1);  // En passant left
-            }
-            else if (x + 1 == en_passant_x)
-            {
-                add_move(x + 1, y - 1);  // En passant right
-            }
-        }
     }
-    else
+
+    if (y == 4 - piece.color)
     {
-        add_move_if_piece(x - 1, y + 1, BLACK);
-        add_move_if_piece(x + 1, y + 1, BLACK);
-
-        if (check_in(x, y + 1) && BOARD(x, y + 1).type == NONE)
+        if (x - 1 == en_passant_x)
         {
-            add_move(x, y + 1);
-            if (y == 1)
-                add_move_if_no_piece(x, y + 2);
+            add_move(x - 1, y + direction);  // En passant left
         }
-
-        if (y == 4)
+        else if (x + 1 == en_passant_x)
         {
-            if (x - 1 == en_passant_x)
-            {
-                add_move(x - 1, y + 1);  // En passant left
-            }
-            else if (x + 1 == en_passant_x)
-            {
-                add_move(x + 1, y + 1);  // En passant right
-            }
+            add_move(x + 1, y + direction);  // En passant right
         }
     }
 }
@@ -714,6 +704,7 @@ void calc_potential_moves()
     for (uint8_t i = 0; i < piece_moves_count_temp; i++)
     {
         pos_t move = piece_moves_temp[i];
+
         if (is_selected)
         {
             if (!is_move_valid(selected.x, selected.y, move))
@@ -745,7 +736,8 @@ void quit_game()
     else
         delete_save(game_id);
 
-    open_main_menu();
+    set_screen(SCREEN_MENU);  // Get back to the last menu
+    menu_update();
 }
 
 // game.h functions

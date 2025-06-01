@@ -48,6 +48,7 @@ void set_screen(app_screen_t screen)
 void main_menu_callback(short item);
 
 short main_menu_item_count;
+short main_menu_last_item = 0;
 
 void open_main_menu()
 {
@@ -68,6 +69,7 @@ void open_main_menu()
     }
 
     open_menu("Chess", items, main_menu_item_count, main_menu_callback);
+    menu_select_item(main_menu_last_item);
 }
 
 void main_menu_callback(short item)
@@ -77,6 +79,13 @@ void main_menu_callback(short item)
         running = false;
         return;
     }
+    if (item == -2)  // Update menu
+    {
+        open_main_menu();
+        return;
+    }
+
+    main_menu_last_item = item;
 
     if (main_menu_item_count == 2)
         item++;

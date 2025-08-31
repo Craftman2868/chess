@@ -53,7 +53,8 @@ uint8_t piece_moves_count;
 #define check_in(x, y) (x < 8 && y < 8)  // >= 0 check not necessary because unsigned
 #define check_in_s(x, y) (x >= 0 && x < 8 && y >= 0 && y < 8)
 
-#define add_move(x, y) piece_moves[piece_moves_count++] = (pos_t) { x, y }  // do {piece_moves[piece_moves_count++] = (pos_t) { x, y }; dbg_printf("%d: %d, %d\n", __LINE__, x - 1, y - 1);} while (0)
+#define add_move(x, y) piece_moves[piece_moves_count++] = (pos_t) { x, y }
+// #define add_move(x, y) do {piece_moves[piece_moves_count++] = (pos_t) { x, y }; dbg_printf("%d: %d, %d\n", __LINE__, x - 1, y - 1);} while (0)
 #define add_move_in(x, y) \
     do { \
         if (check_in(x, y)) \
@@ -107,7 +108,7 @@ void init_board()
         BOARD(i, 6) = (piece_t){PAWN, WHITE};
     }
 
-    for (uint8_t i = POS_XY(0, 2); i < POS_XY(7, 5); i++)
+    for (uint8_t i = POS_XY(0, 2); i <= POS_XY(7, 5); i++)
     {
         board[i].type = NONE;
     }
@@ -153,7 +154,7 @@ void get_pawn_moves(piece_t piece, uint8_t x, uint8_t y)
         add_move(x, y + direction);
         if (piece.color == WHITE && y == 6)
             add_move_if_no_piece(x, y - 2);
-        else if (y == 1)
+        else if (piece.color == BLACK && y == 1)
             add_move_if_no_piece(x, y + 2);
 
     }
@@ -885,8 +886,10 @@ void step_game()
         redraw = true;
     }
 
-    if (redraw
-        && selected_piece.type == PAWN
+    if (!redraw)
+        return;
+
+    if (selected_piece.type == PAWN
         && (cursor.y == PROMOTION
             || ((cursor.y == 0 || cursor.y == 7)
                 && potential_moves[POS(cursor)])))  // The cursor is on a promotion potential move or in the promotion menu
@@ -897,9 +900,9 @@ void step_game()
             promotion_menu_of = 4;
         else
             promotion_menu_of = cursor.x - 2;
-        redraw = true;
+        // redraw = true;  // (already true)
     }
-    else if (redraw)
+    else
     {
         promotion_menu_of = 8;  // No promotion menu
     }

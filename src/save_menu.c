@@ -9,7 +9,7 @@
 #include "input.h"
 #include "yesno.h"
 
-#include <debug.h>
+// #include <debug.h>
 
 char item_names[MAX_SAVE_COUNT][16];
 int8_t item_ids[MAX_SAVE_COUNT];

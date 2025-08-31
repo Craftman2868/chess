@@ -31,13 +31,6 @@ void load_game(game_data_t *data, piece_t board[], color_t *turn, bool king_move
     memcpy(board, data->board, sizeof(piece_t) * 8 * 8);
     *turn = data->turn;
 
-    data->king_moved |= king_moved[BLACK] << 0;
-    data->king_moved |= king_moved[WHITE] << 1;
-    data->rook_moved |= rook_moved[BLACK][0] << 0;
-    data->rook_moved |= rook_moved[BLACK][1] << 1;
-    data->rook_moved |= rook_moved[WHITE][0] << 2;
-    data->rook_moved |= rook_moved[WHITE][1] << 3;
-
     king_moved[BLACK] = (data->king_moved >> 0) & 1;
     king_moved[WHITE] = (data->king_moved >> 1) & 1;
     rook_moved[BLACK][0] = (data->rook_moved >> 0) & 1;
@@ -50,7 +43,7 @@ void load_game(game_data_t *data, piece_t board[], color_t *turn, bool king_move
 
 char *make_name(int8_t id)
 {
-    static char name[] = "CHESS0";
+    static char name[] = "CHESS#";
 
     name[5] = '0' + id;
 
